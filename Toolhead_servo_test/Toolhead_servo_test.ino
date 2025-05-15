@@ -25,10 +25,12 @@ void loop() {
 
 void automatic_mode() {
   while (true) {
-    toolhead.write(180);
-    delay(100);
+    toolhead.write(0);
+    Serial.println(toolhead.read());
+    delay(1000);
     toolhead.write(90);
-    Serial.println("automatic mode cycled");
+    Serial.println(toolhead.read());
+    delay(1000);
   }
 }
 
