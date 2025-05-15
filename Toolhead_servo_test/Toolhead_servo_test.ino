@@ -2,7 +2,7 @@
 
 Servo toolhead;
 
-int pos = 0;    // variable to store the servo position
+int pos = 5;    // variable to store the servo position
 
 /*Modes:
   0: Manual over Serial Port
@@ -24,13 +24,16 @@ void loop() {
 }
 
 void automatic_mode() {
-  while (true) {
-    toolhead.write(0);
+  int counter = 0;
+  while (counter < 500) {
+    toolhead.write(5);
     Serial.println(toolhead.read());
-    delay(1000);
-    toolhead.write(90);
+    delay(250);
+    toolhead.write(85);
     Serial.println(toolhead.read());
-    delay(1000);
+    delay(250);
+    Serial.println(counter);
+    counter ++;
   }
 }
 
