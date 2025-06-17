@@ -3,6 +3,10 @@
     for the firmware of the 2D Printer.
 */
 
+// general:
+
+#define SOFTWARE_VERSION "Alpha"
+
 // Connection with the PC:
 
 #define BAUD_RATE 9600
@@ -44,3 +48,6 @@
     // Toolhead:
     #define SERVO_PIN 17
     #define WORKLIGHT_PIN 18
+
+    // calculated values:
+    #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO*MICROSTEPPING)
