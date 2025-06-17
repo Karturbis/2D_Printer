@@ -6,10 +6,10 @@
 
 #include "config.h"
 
-
-bool STATUS_LED_TOP = false;
-bool STATUS_LED_MID = false;
-bool STATUS_LED_BOT = false;
+bool initialized = false
+bool status_led_top = false;
+bool status_led_mid = false;
+bool status_led_bot = false;
 int[] position;
 
 
@@ -44,7 +44,18 @@ void setup() {
         pinMode(SERVO_PIN, OUTPUT);
         pinMode(WORKLIGHT_PIN, OUTPUT);
   Serial.begin(BAUD_RATE);
-
+  status_led_top = true;
+  digitalWrite(STATUS_LED_TOP_PIN, HIGH);
+  connection_error = connect();
+  if(connection_error) {
+  // the connecting process returned an error, the device has to be rebooted:
+    while(true){
+      status_led_top = !status_led_top;
+      digitalWrite(STATUS_LED_TOP_PIN, status_led_top);
+      delay(500);
+    }
+  }
+  homeing();
 }
 
 void loop() {
@@ -65,14 +76,13 @@ void move(float direction, int micrometers) {
 
 }
 
-int homeing() {
+void homeing() {
   // drive to x-axis stop using move
   // drive to y-axis stop using move
-  //if error return 1, else 0
 }
 
 int connect() {
-  Serial.println("2D_Printer" + SOFTWARE_VERSION);
+  send("2D_Printer" + SOFTWARE_VERSION);
   reply = Serial.readlines();
   if(reply == "connect"){
     return 0;
@@ -80,4 +90,10 @@ int connect() {
   else {
     return 1;
   }
+}
+
+void send(String data) {
+  digitalWrite(TRX_LED_PIN, HIGH);
+  Serial.println(data);
+  digitalWrite(TRX_LED_PIN, LOW);
 }
