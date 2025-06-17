@@ -1,17 +1,23 @@
-/*
-  This is the firmware for the 2D Printer.
+/**
+ * This is the firmware for the 2D Printer.
  */
 
+ // include libraries:
 #include <AccelStepper.h>
+#include <TMC2208Stepper.h>
 
-#include "config.h"
+#include "config.h" // include configuration
 
-bool initialized = false
+// initialzize varables
 bool status_led_top = false;
 bool status_led_mid = false;
 bool status_led_bot = false;
-int[] position;
+int position[2];
 
+// initialize TMC2208 class, use Hardware Serial Port for communication
+TMC2208Stepper driver = TMC2208Stepper(&Serial1);
+
+AccelStepper stepper_a(AccelStepper::DRIVER, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN)
 
 void setup() {
     // Setup Pins:
@@ -26,14 +32,6 @@ void setup() {
         pinMode(HOMING_BUTTON_PIN, INPUT);
         pinMode(WORKLIGHT_BUTTON_PIN, INPUT);
 
-        // Motor Pins:
-        pinMode(MOTOR_A_EN_PIN, OUTPUT);
-        pinMode(MOTOR_A_DIR_PIN, OUTPUT);
-        pinMode(MOTOR_A_STEP_PIN, OUTPUT);
-        pinMode(MOTOR_B_EN_PIN, OUTPUT);
-        pinMode(MOTOR_B_DIR_PIN, OUTPUT);
-        pinMode(MOTOR_B_STEP_PIN, OUTPUT);
-
         // Axis Endswitch Pins:
         pinMode(X_AXIS_END_SWITCH_0_PIN, INPUT);
         pinMode(X_AXIS_END_SWITCH_1_PIN, INPUT);
@@ -43,10 +41,11 @@ void setup() {
         // Toolhead Pins:
         pinMode(SERVO_PIN, OUTPUT);
         pinMode(WORKLIGHT_PIN, OUTPUT);
+  Serial1.begin(STEPPER_BAUD_RATE);
   Serial.begin(BAUD_RATE);
   status_led_top = true;
   digitalWrite(STATUS_LED_TOP_PIN, HIGH);
-  connection_error = connect();
+  int connection_error = connect();
   if(connection_error) {
   // the connecting process returned an error, the device has to be rebooted:
     while(true){
@@ -62,28 +61,48 @@ void loop() {
 
 }
 
-void moveto(int[2] target_position) {
+void moveto(int target_position[2]) {
+  int target_pos_motor[2];
+  int target_pos_x = target_position[0]*STEP_TO_MICROMETER_RATIO;
+  int target_pos_y = target_position[1]*STEP_TO_MICROMETER_RATIO;
+  target_pos_motor[0] = target_pos_x + target_pos_y;
+  target_pos_motor[1] = target_pos_x - target_pos_y;
+  // use moveto from stepper library
 }
 
 void move(float direction, int micrometers) {
   // direction in radians
   int steps[2];
   int delta_x = (int)sin(direction)*micrometers;
-  int delty_y = (int)cos(direction)*micrometers;
-  steps[0] = (delta_x + delty_y)*STEP_TO_MICROMETER_RATIO;
+  int delta_y = (int)cos(direction)*micrometers;
+  steps[0] = (delta_x + delta_y)*STEP_TO_MICROMETER_RATIO;
   steps[1] = (delta_x - delta_y)*STEP_TO_MICROMETER_RATIO;
   // move motor a steps[0] and motor b steps[1]
 
 }
 
 void homeing() {
-  // drive to x-axis stop using move
+  // drive to x-axis stop using move:
+  bool stop = digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  while(!stop) {
+    move(HALF_PI, INVERSE_STEP_TO_MICROMETER_RATIO); // move one step
+    stop = digitalRead(X_AXIS_END_SWITCH_0_PIN)
+  }
   // drive to y-axis stop using move
 }
 
+void init_driver() {
+  // Disable the Drivers:
+  digitalWrite(MOTOR_A_EN_PIN, HIGH);
+  digitalWrite(MOTOR_B_EN_PIN, HIGH);
+  driver.pdn_disable(true);
+  driver.I_scale_analog(false);
+
+}
+
 int connect() {
-  send("2D_Printer" + SOFTWARE_VERSION);
-  reply = Serial.readlines();
+  send(SOFTWARE_VERSION);
+  String reply = Serial.readString();
   if(reply == "connect"){
     return 0;
   }

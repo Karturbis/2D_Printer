@@ -33,6 +33,8 @@
     #define MOTOR_B_DIR_PIN 11
     #define MOTOR_B_STEP_PIN 12
     //other:
+    #define MAX_MOTOR_CURRENT 400 // milli Ampere
+    #define STEPPER_BAUD_RATE 115200
     #define FULLSTEP_TO_MICROMETER_RATIO 1
     #define MICROSTEPPING 16
     #define MAX_ACCELERATION 3000
@@ -51,3 +53,4 @@
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO*MICROSTEPPING)
+    #define INVERSE_STEP_TO_MICROMETER_RATIO (1/STEP_TO_MICROMETER_RATIO)
