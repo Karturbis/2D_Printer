@@ -9,7 +9,7 @@
 
 // Connection with the PC:
 
-#define BAUD_RATE 9600
+#define BAUD_RATE 115200
 
 
 // Hardware Configuration:
@@ -26,16 +26,20 @@
 
     // Motors:
     //Pins:
-    #define MOTOR_A_EN_PIN 7
-    #define MOTOR_A_DIR_PIN 8
-    #define MOTOR_A_STEP_PIN 9
-    #define MOTOR_B_EN_PIN 10
-    #define MOTOR_B_DIR_PIN 11
-    #define MOTOR_B_STEP_PIN 12
+    #define MOTOR_A_EN_PIN 2
+    #define MOTOR_A_DIR_PIN 4
+    #define MOTOR_A_STEP_PIN 3
+    #define MOTOR_A_RX_PIN 6
+    #define MOTOR_A_TX_PIN 5
+    #define MOTOR_B_EN_PIN 7
+    #define MOTOR_B_DIR_PIN 9
+    #define MOTOR_B_STEP_PIN 8
+    #define MOTOR_B_RX_PIN 11
+    #define MOTOR_B_TX_PIN 10
     //other:
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
     #define STEPPER_BAUD_RATE 115200
-    #define FULLSTEP_TO_MICROMETER_RATIO 1
+    #define FULLSTEP_TO_MICROMETER_RATIO 200
     #define MICROSTEPPING 16
     #define MAX_ACCELERATION 3000
     #define MAX_SPEED 14000
@@ -48,8 +52,8 @@
     #define Y_AXIS_END_SWITCH_1_PIN 16
 
     // Toolhead:
-    #define SERVO_PIN 17
-    #define WORKLIGHT_PIN 18
+    #define SERVO_PIN 12
+    #define WORKLIGHT_PIN 13
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO*MICROSTEPPING)
