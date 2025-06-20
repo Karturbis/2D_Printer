@@ -13,8 +13,6 @@
 int move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 
-// constants:
-
 // initialzize varables
 bool status_led_top = false;
 bool status_led_mid = false;
@@ -116,9 +114,6 @@ void setup() {
     }
     
   }*/
-//  homeing();
-//Serial.println(SOFTWARE_VERSION);
-
 }
 
 void loop() {
@@ -221,31 +216,6 @@ int move(float direction, int micrometers) {
   return error;
 }
 
-int move_steps_accelstepper(int steps[2]) {
-  Serial.println("Started move_steps_accelstepper");
-  bool done_a = false;
-  bool done_b = false;
-  stepper_a.move(steps[0]);
-  stepper_b.move(steps[1]);
-  while (!(done_a && done_b)) {
-    Serial.println("started while loop");
-  done_a = !stepper_a.run();
-  done_b = !stepper_b.run();
-  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
-    return 1;
-  }
-  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
-    return 2;
-  }
-  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
-    return 3;
-  }
-  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
-    return 4;
-  }
-  }
-}
-
 int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   int pos_a = 0;
   int pos_b = 0;
@@ -342,6 +312,16 @@ void homeing() {
   //move(1.5, 1000);
 }
 
+// Toolhead:
+void engage_toolhead(){
+  toolhead_servo.write(SERVO_DOWN_POSITION);
+}
+
+void disengage_toolhead(){
+  toolhead_servo.write(SERVO_UP_POSITION);
+}
+
+// tests:
 void test_motor(){
   while (true) {
     digitalWrite(MOTOR_A_DIR_PIN, HIGH);
@@ -364,16 +344,27 @@ void test_motor(){
 
 }
 
-void send(String data) {
-  digitalWrite(TRX_LED_PIN, HIGH);
-  Serial.println(data);
-  digitalWrite(TRX_LED_PIN, LOW);
-}
-
-void engage_toolhead(){
-  toolhead_servo.write(SERVO_DOWN_POSITION);
-}
-
-void disengage_toolhead(){
-  toolhead_servo.write(SERVO_UP_POSITION);
+int move_steps_accelstepper(int steps[2]) {
+  Serial.println("Started move_steps_accelstepper");
+  bool done_a = false;
+  bool done_b = false;
+  stepper_a.move(steps[0]);
+  stepper_b.move(steps[1]);
+  while (!(done_a && done_b)) {
+    Serial.println("started while loop");
+  done_a = !stepper_a.run();
+  done_b = !stepper_b.run();
+  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+    return 1;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    return 2;
+  }
+  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+    return 3;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    return 4;
+  }
+  }
 }
