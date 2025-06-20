@@ -5,8 +5,11 @@
  // include libraries:
 #include <AccelStepper.h>
 #include <TMC2208Stepper.h>
+#include <Servo.h>
 
 #include "config.h" // include configuration
+
+// constants:
 
 
 // initialzize varables
@@ -19,8 +22,12 @@ int position[2];
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
 TMC2208Stepper driver_b = TMC2208Stepper(MOTOR_B_RX_PIN, MOTOR_B_TX_PIN);
 
+// initialize Accel steppers:
 AccelStepper stepper_a(AccelStepper::DRIVER, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 AccelStepper stepper_b(AccelStepper::DRIVER, MOTOR_B_STEP_PIN, MOTOR_B_DIR_PIN);
+
+// initialize toolhead servo:
+Servo toolhead_servo;
 
 void setup() {
     // Setup Pins:
@@ -44,6 +51,10 @@ void setup() {
         // Toolhead Pins:
         pinMode(SERVO_PIN, OUTPUT);
         pinMode(STATUS_LED_TOP_PIN, OUTPUT);
+
+        // Servo Setup:
+        toolhead_servo.attach(SERVO_PIN);
+        toolhead_servo.write((SERVO_UP_POSITION));
 
         // Motor Setup:
         // init motr pins:
@@ -101,15 +112,15 @@ void setup() {
 
 void loop() {
   digitalWrite(STATUS_LED_TOP_PIN, HIGH);
-  while (!Serial.available()) {} // wait for data available
+  while (!Serial.available()) // wait for data available
   digitalWrite(STATUS_LED_TOP_PIN, LOW);
-  String command = Serial.readStringUntil('Q');  //read until terminator character
+  String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
   command.trim();
-  if(command.startsWith("G")){
+  if(command.startsWith(GO_TO)){
     Serial.print("Command: ");
     Serial.println(command);
-    String direction = command.substring(1, command.indexOf('S')); // string until the seperator, ignoring first char
-    String distance = command.substring(command.indexOf('S')+1); // string until terminator, not include seperator
+    String direction = command.substring(1, command.indexOf(SEPERATOR)); // string until the seperator, ignoring first char
+    String distance = command.substring(command.indexOf(SEPERATOR)+1); // string until terminator, not include seperator
     Serial.print("Direction: ");
     Serial.println(direction);
     Serial.print("Distance: ");
@@ -117,41 +128,38 @@ void loop() {
     move(direction.toFloat(), distance.toInt()); // go to
     Serial.println(0);
   }
-  else if (command.startsWith("H")) {
+  else if (command.startsWith(HOMING)) {
   //homeing();
-  delay(200);
+  disengage_toolhead();
   Serial.println(0);
   }
-  else if (command.startsWith("U")) {
+  else if (command.startsWith(DISENGAGE_TOOLHEAD)) {
     disengage_toolhead();
-    delay(200);
     Serial.println(0);
   }
-  else if (command.startsWith("D")) {
+  else if (command.startsWith(ENGAGE_TOOLHEAD)) {
     engage_toolhead();
-    delay(200);
     Serial.println(0);
   }
-
-}
-
-void moveto(int target_position[2]) {
-  int target_pos_motor[2];
-  int target_pos_x = target_position[0]*STEP_TO_MICROMETER_RATIO;
-  int target_pos_y = target_position[1]*STEP_TO_MICROMETER_RATIO;
-  target_pos_motor[0] = target_pos_x + target_pos_y;
-  target_pos_motor[1] = target_pos_x - target_pos_y;
-  // use moveto from stepper library
 }
 
 void move(float direction, int micrometers) {
   Serial.println("Starting to move ...");
   // direction in radians
   int steps[2];
-  int pos_a = 0;
-  int pos_b = 0;
   long delta_x = (long)(sin(direction)*micrometers);
   long delta_y = (long)(cos(direction)*micrometers);
+  if(TOGGLE_X_Y_AXIS){
+    int new_delta_x = delta_y;
+    delta_y = delta_x;
+    delta_x = delta_y;
+  }
+  if(TOGGLE_X_AXIS){
+    delta_x = -delta_x;
+  }
+  if(TOGGLE_Y_AXIS) {
+    delta_y = -delta_y;
+  }
   steps[0] = (int)(delta_x + delta_y)*STEP_TO_MICROMETER_RATIO;
   steps[1] = (int)(delta_x - delta_y)*STEP_TO_MICROMETER_RATIO;
   stepper_a.move(steps[0]);
@@ -163,14 +171,36 @@ void move(float direction, int micrometers) {
   Serial.println(delta_x);
   Serial.print("Delty_y: ");
   Serial.println(delta_y);
-  Serial.println("About to start the while loop ...");
   Serial.print("Steps[0]: ");
   Serial.println(steps[0]);
   Serial.print("Steps[1]: ");
   Serial.println(steps[1]);
+  if(USE_ACCELSTEPPER) {
+    move_steps_accelstepper(steps);
+  }
+  else {
+   move_steps(steps);
+  }
+}
+
+void move_steps_accelstepper(int steps[2]) {
+  Serial.println("Started move_steps_accelstepper");
+  bool done_a = false;
+  bool done_b = false;
+  stepper_a.move(steps[0]);
+  stepper_b.move(steps[1]);
+  while (!(done_a && done_b)) {
+    Serial.println("started while loop");
+  done_a = !stepper_a.run();
+  done_b = !stepper_b.run();
+  }
+}
+
+void move_steps(int steps[2]){
+  int pos_a = 0;
+  int pos_b = 0;
   while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
-    Serial.println("Started While loop ...");
-    if(pos_a <= steps[0]) {
+    if(pos_a < steps[0]) {
       digitalWrite(MOTOR_A_DIR_PIN, LOW);
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
       pos_a ++;
@@ -193,11 +223,8 @@ void move(float direction, int micrometers) {
     delayMicroseconds(WORKING_SPEED_DELAY);
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.print("pos_a: ");
-    Serial.println(pos_a);
-    Serial.print("pos_b: ");
-    Serial.println(pos_b);
   }
+
 }
 
 void homeing() {
@@ -247,9 +274,9 @@ void send(String data) {
 }
 
 void engage_toolhead(){
-  //not implemented yet
+  toolhead_servo.write(SERVO_DOWN_POSITION);
 }
 
 void disengage_toolhead(){
-  //no implemented yet
+  toolhead_servo.write(SERVO_UP_POSITION);
 }

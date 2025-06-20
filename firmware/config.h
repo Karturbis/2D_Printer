@@ -9,15 +9,19 @@
 
 // Connection with the PC:
 
+#define TOGGLE_X_AXIS true
+#define TOGGLE_Y_AXIS false
+#define TOGGLE_X_Y_AXIS false
+
 #define BAUD_RATE 115200
 //protocol Symbols:
-#define TERMINATOR Q
-#define SEPERATOR S
+#define TERMINATOR ";"
+#define SEPERATOR ","
 // commands: 
-#define HOMING H
-#define GO_TO G
-#define DISENGAGE_TOOLHEAD U
-#define ENGAGE_TOOLHEAF D
+#define HOMING "h"
+#define GO_TO "g"
+#define DISENGAGE_TOOLHEAD "u"  
+#define ENGAGE_TOOLHEAD "d"
 
 
 // Hardware Configuration:
@@ -48,11 +52,12 @@
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
     #define STEPPER_BAUD_RATE 115200
     #define FULLSTEP_TO_MICROMETER_RATIO 0.05
-    #define MICROSTEPPING 1
-    #define MAX_ACCELERATION 3000
-    #define MAX_SPEED 14000
-    #define WORKING_SPEED 1000
-    #define WORKING_SPEED_DELAY 1000
+    #define MICROSTEPPING 256
+    #define USE_ACCELSTEPPER true
+    #define MAX_ACCELERATION 3000 // for use with AccelStepper
+    #define MAX_SPEED 14000     // for use with AccelStepper
+    #define WORKING_SPEED 14000  // for use with AccelStepper
+    #define WORKING_SPEED_DELAY 160 // for use with own implementation
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A1
@@ -62,9 +67,9 @@
 
     // Toolhead:
     #define SERVO_PIN 13
-    #define SERVO_UP_POSITION
-    #define SERVO_SOWN_POSITION
+    #define SERVO_UP_POSITION 10
+    #define SERVO_DOWN_POSITION 0
 
     // calculated values:
-    #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO*MICROSTEPPING)
-    #define INVERSE_STEP_TO_MICROMETER_RATIO (1/STEP_TO_MICROMETER_RATIO)
+    #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO/MICROSTEPPING)
+    #define INVERSE_STEP_TO_MICROMETER_RATIO (1*STEP_TO_MICROMETER_RATIO)
