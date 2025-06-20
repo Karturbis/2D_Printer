@@ -368,3 +368,38 @@ int move_steps_accelstepper(int steps[2]) {
   }
   }
 }
+
+int move_steps_diagonal_support(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+  int pos_a = 0;
+  int pos_b = 0;
+  bool done = false;
+  unsigned long current_millis = millis();
+  unsigned long previous_millis_a = millis();
+  unsigned long previous_millis_b = millis();
+  float ratio = steps[0]/steps[1];
+  unsigned int interval_a = // implement calculation
+  unsigned int interval_b = // implement calculation
+  while (!done) {
+    if(current_millis - previous_millis_a >= interval_a) {
+      digitalWrite(MOTOR_A_STEP_PIN, HIGH);
+    }
+    if(!ignore_endswitches){
+      if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+        return 1;
+      }
+      if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+        return 2;
+      }
+      if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+        return 3;
+      }
+      if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+        return 4;
+      }
+    }
+    digitalWrite(MOTOR_A_STEP_PIN, LOW);
+    digitalWrite(MOTOR_B_STEP_PIN, LOW);
+  }
+  return 0;
+
+}
