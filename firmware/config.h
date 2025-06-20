@@ -52,12 +52,13 @@
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
     #define STEPPER_BAUD_RATE 115200
     #define FULLSTEP_TO_MICROMETER_RATIO 0.05
-    #define MICROSTEPPING 256
-    #define USE_ACCELSTEPPER true
+    #define MICROSTEPPING 1
+    #define USE_ACCELSTEPPER false
     #define MAX_ACCELERATION 3000 // for use with AccelStepper
     #define MAX_SPEED 14000     // for use with AccelStepper
     #define WORKING_SPEED 14000  // for use with AccelStepper
     #define WORKING_SPEED_DELAY 160 // for use with own implementation
+    #define HOMING_SPEED_DELAY 1000
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A1

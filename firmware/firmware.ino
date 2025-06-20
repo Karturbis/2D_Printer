@@ -9,13 +9,18 @@
 
 #include "config.h" // include configuration
 
-// constants:
+// Function prototypes:
+void move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY);
 
+
+// constants:
 
 // initialzize varables
 bool status_led_top = false;
 bool status_led_mid = false;
 bool status_led_bot = false;
+bool manual_mode = false;
+bool expert_mode = false;
 int position[2];
 
 // initialize TMC2208 class, use Hardware Serial Port for communication
@@ -43,10 +48,10 @@ void setup() {
         pinMode(WORKLIGHT_BUTTON_PIN, INPUT);
         */
         // Axis Endswitch Pins:
-        pinMode(X_AXIS_END_SWITCH_0_PIN, INPUT);
-        pinMode(X_AXIS_END_SWITCH_1_PIN, INPUT);
-        pinMode(Y_AXIS_END_SWITCH_0_PIN, INPUT);
-        pinMode(Y_AXIS_END_SWITCH_1_PIN, INPUT);
+        pinMode(X_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
+        pinMode(X_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
+        pinMode(Y_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
+        pinMode(Y_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
         
         // Toolhead Pins:
         pinMode(SERVO_PIN, OUTPUT);
@@ -74,12 +79,15 @@ void setup() {
         driver_a.push();
         driver_b.push();
 
+        // UART Setup:
         driver_a.pdn_disable(true);     // Use PDN/UART pin for communication
         driver_b.pdn_disable(true);     // Use PDN/UART pin for communication
         driver_a.I_scale_analog(false); // Use internal voltage reference
         driver_b.I_scale_analog(false); // Use internal voltage reference
         driver_a.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
         driver_b.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
+        driver_a.pwm_autoscale(1);
+        driver_b.pwm_autoscale(1);
         driver_a.microsteps(MICROSTEPPING);     // set microstepping driver a
         driver_b.microsteps(MICROSTEPPING);     // set microstepping driver b
         driver_a.toff(2);               // Enable driver in software
@@ -87,6 +95,9 @@ void setup() {
 
         digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
         digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
+
+        // Accelstepper Setup:
+        stepper_a.setMaxSpeed(MAX_SPEED);
 
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(100);
@@ -111,6 +122,21 @@ void setup() {
 }
 
 void loop() {
+  while (false) {
+    if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+      Serial.println("X_AXISIS 0 triggered");
+    }
+    if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+      Serial.println("X_AXISIS 1 triggered");
+    }
+    if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+      Serial.println("Y_AXISIS 0 triggered");
+    }
+    if(!digitalRead(Y_AXIS_END_SWITCH_1_PIN)){
+      Serial.println("Y_AXISIS 1 triggered");
+    }
+  delay(50);
+  }
   digitalWrite(STATUS_LED_TOP_PIN, HIGH);
   while (!Serial.available()) // wait for data available
   digitalWrite(STATUS_LED_TOP_PIN, LOW);
@@ -129,8 +155,7 @@ void loop() {
     Serial.println(0);
   }
   else if (command.startsWith(HOMING)) {
-  //homeing();
-  disengage_toolhead();
+  homeing();
   Serial.println(0);
   }
   else if (command.startsWith(DISENGAGE_TOOLHEAD)) {
@@ -167,20 +192,28 @@ void move(float direction, int micrometers) {
   Serial.println("-----------------------------------");
   Serial.println("######## Start moving #############");
   Serial.println("-----------------------------------");
-  Serial.print("Delty_X: ");
+  Serial.print("Delta_X: ");
   Serial.println(delta_x);
-  Serial.print("Delty_y: ");
+  Serial.print("Delta_y: ");
   Serial.println(delta_y);
   Serial.print("Steps[0]: ");
   Serial.println(steps[0]);
   Serial.print("Steps[1]: ");
   Serial.println(steps[1]);
+  // move:
   if(USE_ACCELSTEPPER) {
     move_steps_accelstepper(steps);
   }
   else {
    move_steps(steps);
   }
+  // Update Position:
+  position[0] = position[0] + delta_x;
+  position[1] = position[1] + delta_y;
+  Serial.print("New Position: ");
+  Serial.print(position[0]);
+  Serial.print(" ");
+  Serial.println(position[1]);
 }
 
 void move_steps_accelstepper(int steps[2]) {
@@ -196,7 +229,7 @@ void move_steps_accelstepper(int steps[2]) {
   }
 }
 
-void move_steps(int steps[2]){
+void move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY){
   int pos_a = 0;
   int pos_b = 0;
   while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
@@ -228,21 +261,53 @@ void move_steps(int steps[2]){
 }
 
 void homeing() {
+  int steps[2];
+  disengage_toolhead();
   // drive to x-axis stop using move:
   Serial.println("Start Homing ...");
   Serial.println("Homing X-Axis ...");
-  bool stop = digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  bool stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  steps[0] = 1;
+  steps[1] = 1;
   while(!stop) {
-    move(3*HALF_PI, 1); // move one step
-    stop = digitalRead(X_AXIS_END_SWITCH_0_PIN);
+    move_steps(steps, HOMING_SPEED_DELAY);
+    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
   Serial.println("Hit the trigger, moving back");
   // driving until the switch is not triggered anymore:
+  steps[0] = -1;
+  steps[1] = -1;
   while (stop) {
-  move(HALF_PI, 1);
+    move_steps(steps, HOMING_SPEED_DELAY);
+    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
+  position[0] = 0;
   Serial.println("Finished Homing X-Axis");
+  Serial.println("Backing up on X-Axis ...");
+  move(HALF_PI, 10000);
   // drive to y-axis stop using move
+  Serial.println("Homing Y-Axis ...");
+  stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  steps[0] = 1;
+  steps[1] = -1;
+  while(!stop) {
+    move_steps(steps, HOMING_SPEED_DELAY);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  }
+  Serial.println("Hit the trigger, moving back");
+  // driving until the switch is not triggered anymore:
+  steps[0] = -1;
+  steps[1] = 1;
+  while (stop) {
+    move_steps(steps, HOMING_SPEED_DELAY);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  }
+  position[1] = 0;
+  Serial.println("Finished Homing Y-Axis");
+  Serial.println("Backing up on Y-Axis ...");
+  move(PI, 10000);
+  Serial.println("Finished Homing");
+  //move(1.5, 1000);
 }
 
 void test_motor(){
