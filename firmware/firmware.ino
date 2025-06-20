@@ -10,7 +10,7 @@
 #include "config.h" // include configuration
 
 // Function prototypes:
-void move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY);
+int move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 
 // constants:
@@ -122,21 +122,6 @@ void setup() {
 }
 
 void loop() {
-  while (false) {
-    if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
-      Serial.println("X_AXISIS 0 triggered");
-    }
-    if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
-      Serial.println("X_AXISIS 1 triggered");
-    }
-    if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
-      Serial.println("Y_AXISIS 0 triggered");
-    }
-    if(!digitalRead(Y_AXIS_END_SWITCH_1_PIN)){
-      Serial.println("Y_AXISIS 1 triggered");
-    }
-  delay(50);
-  }
   digitalWrite(STATUS_LED_TOP_PIN, HIGH);
   while (!Serial.available()) // wait for data available
   digitalWrite(STATUS_LED_TOP_PIN, LOW);
@@ -151,10 +136,28 @@ void loop() {
     Serial.println(direction);
     Serial.print("Distance: ");
     Serial.println(distance);
-    move(direction.toFloat(), distance.toInt()); // go to
-    Serial.println(0);
+    int error = move(direction.toFloat(), distance.toInt()); // go to
+    if(error == 1){
+      Serial.println("Toolhead ran into wall, x-axis 0 triggered!");
+      Serial.println("Home the Printer to move again!");
+    }
+    else if(error == 2){
+      Serial.println("Toolhead ran into wall, x-axis 1 triggered!");
+      Serial.println("Home the Printer to move again!");
+    }
+    else if(error == 3){
+      Serial.println("Toolhead ran into wall, y-axis 0 triggered!");
+      Serial.println("Home the Printer to move again!");
+    }
+    else if(error == 4){
+      Serial.println("Toolhead ran into wall, y-axis 1 triggered!");
+      Serial.println("Home the Printer to move again!");
+    }
+    Serial.println(error);
   }
   else if (command.startsWith(HOMING)) {
+  homeing();
+  homeing();
   homeing();
   Serial.println(0);
   }
@@ -168,7 +171,7 @@ void loop() {
   }
 }
 
-void move(float direction, int micrometers) {
+int move(float direction, int micrometers) {
   Serial.println("Starting to move ...");
   // direction in radians
   int steps[2];
@@ -201,11 +204,12 @@ void move(float direction, int micrometers) {
   Serial.print("Steps[1]: ");
   Serial.println(steps[1]);
   // move:
+  int error;
   if(USE_ACCELSTEPPER) {
-    move_steps_accelstepper(steps);
+    error = move_steps_accelstepper(steps);
   }
   else {
-   move_steps(steps);
+   error = move_steps(steps);
   }
   // Update Position:
   position[0] = position[0] + delta_x;
@@ -214,9 +218,10 @@ void move(float direction, int micrometers) {
   Serial.print(position[0]);
   Serial.print(" ");
   Serial.println(position[1]);
+  return error;
 }
 
-void move_steps_accelstepper(int steps[2]) {
+int move_steps_accelstepper(int steps[2]) {
   Serial.println("Started move_steps_accelstepper");
   bool done_a = false;
   bool done_b = false;
@@ -226,10 +231,22 @@ void move_steps_accelstepper(int steps[2]) {
     Serial.println("started while loop");
   done_a = !stepper_a.run();
   done_b = !stepper_b.run();
+  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+    return 1;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    return 2;
+  }
+  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+    return 3;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    return 4;
+  }
   }
 }
 
-void move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY){
+int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   int pos_a = 0;
   int pos_b = 0;
   while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
@@ -253,10 +270,25 @@ void move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY){
       digitalWrite(MOTOR_B_STEP_PIN, HIGH);
       pos_b --;
     }
+    if(!ignore_endswitches){
+      if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+        return 1;
+      }
+      if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+        return 2;
+      }
+      if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+        return 3;
+      }
+      if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+        return 4;
+      }
+    }
     delayMicroseconds(WORKING_SPEED_DELAY);
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
   }
+  return 0;
 
 }
 
@@ -270,7 +302,7 @@ void homeing() {
   steps[0] = 1;
   steps[1] = 1;
   while(!stop) {
-    move_steps(steps, HOMING_SPEED_DELAY);
+    move_steps(steps, HOMING_SPEED_DELAY, true);
     stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
   Serial.println("Hit the trigger, moving back");
@@ -278,7 +310,7 @@ void homeing() {
   steps[0] = -1;
   steps[1] = -1;
   while (stop) {
-    move_steps(steps, HOMING_SPEED_DELAY);
+    move_steps(steps, HOMING_SPEED_DELAY, true);
     stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
   position[0] = 0;
@@ -291,7 +323,7 @@ void homeing() {
   steps[0] = 1;
   steps[1] = -1;
   while(!stop) {
-    move_steps(steps, HOMING_SPEED_DELAY);
+    move_steps(steps, HOMING_SPEED_DELAY, true);
     stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
   }
   Serial.println("Hit the trigger, moving back");
@@ -299,7 +331,7 @@ void homeing() {
   steps[0] = -1;
   steps[1] = 1;
   while (stop) {
-    move_steps(steps, HOMING_SPEED_DELAY);
+    move_steps(steps, HOMING_SPEED_DELAY, true);
     stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
   }
   position[1] = 0;
