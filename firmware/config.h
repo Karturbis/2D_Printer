@@ -62,6 +62,8 @@
 
     // Toolhead:
     #define SERVO_PIN 13
+    #define SERVO_UP_POSITION
+    #define SERVO_SOWN_POSITION
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO*MICROSTEPPING)

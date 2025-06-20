@@ -95,16 +95,15 @@ void setup() {
     
   }*/
 //  homeing();
+//Serial.println(SOFTWARE_VERSION);
 
 }
 
 void loop() {
   digitalWrite(STATUS_LED_TOP_PIN, HIGH);
-  while (!Serial.available()) {
-  }
+  while (!Serial.available()) {} // wait for data available
   digitalWrite(STATUS_LED_TOP_PIN, LOW);
-  while (Serial.available() == 0) {}     //wait for data available
-  String command = Serial.readStringUntil('Q');  //read until timeout
+  String command = Serial.readStringUntil('Q');  //read until terminator character
   command.trim();
   if(command.startsWith("G")){
     Serial.print("Command: ");
@@ -116,17 +115,24 @@ void loop() {
     Serial.print("Distance: ");
     Serial.println(distance);
     move(direction.toFloat(), distance.toInt()); // go to
+    Serial.println(0);
   }
-  else if (command.startsWith("HOMING")) {
+  else if (command.startsWith("H")) {
   //homeing();
-  }
-  else if (command.startsWith("DISENGAGE_TOOLHEAD")) {
-    disengage_toolhead();
-  }
-  else if (command.startsWith("ENGAGE_TOOLHEAD")) {
-    engage_toolhead();
-  }
+  delay(200);
   Serial.println(0);
+  }
+  else if (command.startsWith("U")) {
+    disengage_toolhead();
+    delay(200);
+    Serial.println(0);
+  }
+  else if (command.startsWith("D")) {
+    engage_toolhead();
+    delay(200);
+    Serial.println(0);
+  }
+
 }
 
 void moveto(int target_position[2]) {
