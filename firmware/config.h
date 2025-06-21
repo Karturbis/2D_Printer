@@ -40,24 +40,33 @@
     //Pins:
     #define MOTOR_A_EN_PIN 2
     #define MOTOR_A_DIR_PIN 3
-    #define MOTOR_A_STEP_PIN 4
+    #define MOTOR_A_STEP_PIN 9
     #define MOTOR_A_RX_PIN 5
     #define MOTOR_A_TX_PIN 6
     #define MOTOR_B_EN_PIN 7
-    #define MOTOR_B_DIR_PIN 9
-    #define MOTOR_B_STEP_PIN 8
-    #define MOTOR_B_RX_PIN 10
+    #define MOTOR_B_DIR_PIN 4
+    #define MOTOR_B_STEP_PIN 10
+    #define MOTOR_B_RX_PIN 8
     #define MOTOR_B_TX_PIN 11
     //other:
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
     #define STEPPER_BAUD_RATE 115200
     #define FULLSTEP_TO_MICROMETER_RATIO 0.05
     #define MICROSTEPPING 1
-    #define STEPS_ALGORITHM move_steps//_diagonal_support // function name of the used algorithm for step by step moving
-    #define MAX_ACCELERATION 3000 // for use with AccelStepper
+    // function name of the used algorithm for step by step moving:
+//   #define STEPS_ALGORITHM move_steps
+   #define STEPS_ALGORITHM move_steps_accelstepper
+//   #define STEPS_ALGORITHM move_steps_diagonal_micros
+//   #define STEPS_ALGORITHM move_steps_diagonal_slope
+
+    #define ACCELERATION 3000 // for use with FastAccelStepper
     #define MAX_SPEED 14000     // for use with AccelStepper
     #define WORKING_SPEED 14000  // for use with AccelStepper
-    #define WORKING_SPEED_DELAY 170 // for use with own implementation
+    // for use with own implementation:
+    // for x axis: WORKING_SPEED_DELAY >= 134
+    // for y axis: WORKING_SPEED_DELAY >= 155
+    // use WORKING_SPEED_DELAY >= 170 for safety
+    #define WORKING_SPEED_DELAY 170
     #define HOMING_SPEED_DELAY 1000
 
     // Axis-Endswitches:
