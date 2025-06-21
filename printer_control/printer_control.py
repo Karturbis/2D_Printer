@@ -3,11 +3,13 @@
 #imports:
 from math import pi
 from datetime import datetime
+from time import sleep
 import serial
 
 #consts:
-PORT = "/dev/ttyACM1"
+PORT = "/dev/ttyACM0"
 LOGDIR = "printer_control/logs"
+PRINTFILEDIR = "printer_control/print_files"
 
 
 ser = serial.Serial(PORT, baudrate=115200, timeout=1)
@@ -38,7 +40,11 @@ def listen():
     while reading:  #read incoming traffic
         ret = ser.readline()
         if ret:
-            logprint(ret.decode("ascii").strip("\r\n"))
+            decoded_ret = ret.decode("ascii").strip("\r\n")
+            if not decoded_ret.startswith("LOOP"):
+                logprint(decoded_ret)
+            if decoded_ret == 0:
+                break
         else:
             break
 
@@ -54,6 +60,36 @@ def move_x(dist:int):
 def move_y(dist:str):
     command = f"g{pi/2},{dist};"
     send(command)
+
+def print_file(filename:str):
+    send("h;")
+    listen()
+    print("homed")
+    for _ in range(10):
+        move_x(-20000)
+        listen()
+    print("moved")
+    try:
+        with open(f"{PRINTFILEDIR}/{filename}", "r", encoding="Utf-8") as reader:
+            lines = reader.readlines()
+    except FileNotFoundError as e:
+        logprint(f"ERROR:Could not open the file: {e}")
+        return
+    logprint("#############################")
+    sleep(0.5)
+    logprint("##### Starting Print ... ####")
+    sleep(0.5)
+    logprint("#############################")
+    sleep(0.5)
+    for command in lines:
+        send(command)
+        listen()
+    logprint("#############################")
+    sleep(0.5)
+    logprint("##### Finished Print ... ####")
+    sleep(0.5)
+    logprint("#############################")
+
 
 
 ###################
@@ -104,9 +140,12 @@ def main():
             or user_in[0].startswith("h")
             or user_in[0].startswith("u")
             or user_in[0].startswith("d")) and user_in[0].endswith(";"):
-            # give users the possibility, to send compley commands
+            # give users the possibility, to send complex commands
             command = user_in[0]
             send(command)
+        elif user_in[0].lower() == "p":
+            print_file(user_in[1])
+            continue
         else:
             logprint("Unknown command, not sending")
             continue
