@@ -26,6 +26,10 @@ def macros(arguments):
         move_x(-dist)
         listen()
         move_y(-dist)
+    elif arguments[0].lower() == "t0":
+        send("g5.7,20000;")
+    elif arguments[0].lower() == "-t0":
+        send("g5.7,-20000;")
 
 def listen():
     while not ser.in_waiting:  # wait until traffic comes in:
@@ -99,6 +103,7 @@ def main():
             send(command)
         else:
             logprint("Unknown command, not sending")
+            continue
         listen()
     ser.close()
 
