@@ -3,9 +3,7 @@
  */
 
  // include libraries:
-//#include <AccelStepper.h>
-#include <FastAccelStepper.h>
-#include <AVRStepperPins.h>
+#include <AccelStepper.h>
 #include <TMC2208Stepper.h>
 #include <Servo.h>
 
@@ -30,14 +28,8 @@ TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
 TMC2208Stepper driver_b = TMC2208Stepper(MOTOR_B_RX_PIN, MOTOR_B_TX_PIN);
 
 // initialize Accel steppers:
-//AccelStepper stepper_a(AccelStepper::DRIVER, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
-//AccelStepper stepper_b(AccelStepper::DRIVER, MOTOR_B_STEP_PIN, MOTOR_B_DIR_PIN);
-
-// initialize Fast accelstepper egines:
-FastAccelStepperEngine engine_a = FastAccelStepperEngine();
-FastAccelStepperEngine engine_b = FastAccelStepperEngine();
-FastAccelStepper *fstepper_a = NULL;
-FastAccelStepper *fstepper_b = NULL;
+AccelStepper stepper_a(AccelStepper::DRIVER, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
+AccelStepper stepper_b(AccelStepper::DRIVER, MOTOR_B_STEP_PIN, MOTOR_B_DIR_PIN);
 
 // initialize toolhead servo:
 Servo toolhead_servo;
@@ -106,34 +98,10 @@ void setup() {
 
         
         // Accelstepper Setup:
-        /*
         stepper_a.setMaxSpeed(MAX_SPEED);
         stepper_b.setMaxSpeed(MAX_SPEED);
         stepper_a.setAcceleration(ACCELERATION);
         stepper_b.setAcceleration(ACCELERATION);
-        */
-
-
-        // FastAccelStepper Setup:
-        engine_a.init();
-        engine_b.init();
-        fstepper_a = engine_a.stepperConnectToPin(MOTOR_A_STEP_PIN);
-        fstepper_b = engine_b.stepperConnectToPin(MOTOR_B_STEP_PIN);
-        if(fstepper_a) {
-          fstepper_a->setSpeedInUs(WORKING_SPEED_DELAY);
-          fstepper_a->setAcceleration(300);
-        }
-        else {
-        Serial.println("CRITICAL:Could not connet fstepper_A to pin!");
-        }
-        if(fstepper_b) {
-          fstepper_b->setSpeedInUs(WORKING_SPEED_DELAY);
-          fstepper_b->setAcceleration(ACCELERATION);
-        }
-        else {
-        Serial.println("CRITICAL:Could not connet fstepper_B to pin!");
-        }
-
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(100);
   //status_led_top = true;
@@ -422,7 +390,7 @@ int move_steps_accelstepper(int steps[2]) {
 
 int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println("-------------------------------------------------------");
-  Serial.println("####### move_steps_diagonal_millis starting... ########");
+  Serial.println("####### move_steps_diagonal_micros starting... ########");
   Serial.println("-------------------------------------------------------");
   bool motor_a_state = false;
   bool motor_b_state = false;
@@ -431,9 +399,9 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
   bool done_a = false;
   bool done_b = false;
   // init counters:
-  unsigned long current_millis;
-  unsigned long previous_millis_a = 0;
-  unsigned long previous_millis_b = 0;
+  unsigned long current_micros;
+  unsigned long previous_micros_a = 0;
+  unsigned long previous_micros_b = 0;
   // set the directions of the steppers:
   if(steps[0] < 0) {
     digitalWrite(MOTOR_A_DIR_PIN, LOW);
@@ -495,9 +463,9 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
   //return 0;
 
   while (!(done_a && done_b)) {
-    current_millis = micros();
-    if((current_millis - previous_millis_a >= interval_a) && !done_a) {
-      previous_millis_a = current_millis;
+    current_micros = micros();
+    if((current_micros - previous_micros_a >= interval_a) && !done_a) {
+      previous_micros_a = current_micros;
       motor_a_state = !motor_a_state;
       digitalWrite(MOTOR_A_STEP_PIN, motor_a_state);
       Serial.print("LOOPDEBUG:Setting motor A ");
@@ -512,8 +480,8 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
         Serial.println("LOOPDEBUG:A is done");
       }
     }
-    if((current_millis - previous_millis_b >= interval_b) && !done_b) {
-      previous_millis_b = current_millis;
+    if((current_micros - previous_micros_b >= interval_b) && !done_b) {
+      previous_micros_b = current_micros;
       motor_b_state = !motor_b_state;
       digitalWrite(MOTOR_B_STEP_PIN, motor_b_state);
       Serial.print("LOOPDEBUG:Setting motor B ");
@@ -568,39 +536,70 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   uint8_t long_side;
   uint8_t step_pin_short_side;
   uint8_t step_pin_long_side;
-  long steps_short_position;
-  long steps_long_position;
+  long steps_short_position = 0;
+  long steps_long_position = 0;
   float slope;
-  if(!(steps[0] && steps[1])){
-    if(steps[0] < steps[1]){
-      Serial.println("DEBUG:Steps: A < B");
-      long_side = 1;
-      short_side = 0;
-      step_pin_short_side = MOTOR_A_STEP_PIN;
-      step_pin_long_side = MOTOR_B_STEP_PIN;
+  if(steps[0] && steps[1]){
+    if(steps[0] == steps[1]){
+      Serial.println("DEBUG:Steps A == B");
+      Serial.println("WARNING:Not implemented yet, please move in diag dir.");
+      return 0;
     }
     else {
-      Serial.println("DEBUG:Steps: B < A");
-      long_side = 0;
-      short_side = 1;
-      step_pin_short_side = MOTOR_B_STEP_PIN;
-      step_pin_long_side = MOTOR_A_STEP_PIN;
+      if(steps[0] < steps[1]){
+        Serial.println("DEBUG:Steps: A < B");
+        long_side = 1;
+        short_side = 0;
+        step_pin_short_side = MOTOR_A_STEP_PIN;
+        step_pin_long_side = MOTOR_B_STEP_PIN;
+      }
+      else {
+        Serial.println("DEBUG:Steps: B < A");
+        long_side = 0;
+        short_side = 1;
+        step_pin_short_side = MOTOR_B_STEP_PIN;
+        step_pin_long_side = MOTOR_A_STEP_PIN;
+        Serial.print("DEBUG:short side: ");
+        Serial.println(short_side);
+        Serial.print("DEBUG:steps short side: ");
+        Serial.println(steps[short_side]);
+        Serial.print("DEBUG:long side: ");
+        Serial.println(long_side);
+        Serial.print("DEBUG:steps long side: ");
+        Serial.println(steps[long_side]);
+      }
+      slope = (float) steps[short_side] / (float) steps[long_side];
     }
-    slope = steps[short_side]/steps[long_side];
 
   }
   else { // if the line is printable by move_steps, print the line with move_steps
     // Ny implemented
+    Serial.println("WARNING:Not implemented yet! please move diagonal");
+    return 0;
   }
   Serial.print("DEBUG:Slope: ");
   Serial.println(slope);
-  for (; steps_long_position <= steps[long_side]; steps_long_position++) {
+  long diff;
+  for(Serial.println("DEBUG:started for loop"); steps_long_position <= steps[long_side]; steps_long_position++) {
     digitalWrite(step_pin_long_side, HIGH);
-    if(round(steps_long_position*slope-steps_short_position) > 1) { // check difference between calculated and actual position
+    Serial.print("LOOPDEBUG:Set Motor ");
+    Serial.print(long_side);
+    Serial.println(" HIGH");
+    diff = round(steps_long_position * slope - steps_short_position);
+    Serial.print("LOOPDEBUG:diff == ");
+    Serial.println(diff);
+    if(diff >= 1){ // check difference between calculated and actual position
       digitalWrite(step_pin_short_side, HIGH);
+      steps_short_position ++;
+      Serial.print("LOOPDEBUG:Set Motor ");
+      Serial.print(short_side);
+      Serial.println(" HIGH");
     }
+
+    delayMicroseconds(HIGH_DELAY);
     digitalWrite(step_pin_short_side, LOW);
     digitalWrite(step_pin_long_side, LOW);
+    Serial.println("LOOPDEBUG:Setting both motors LOW");
     delayMicroseconds(working_speed_delay);
     if(!ignore_endswitches){
       uint8_t collision = check_collision();
@@ -611,8 +610,8 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   }
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println("motor a LOW");
-    Serial.println("motor B LOW");
+    Serial.println("DEBUG:motor a LOW");
+    Serial.println("DEBUG:motor B LOW");
   return 0;
 
 }

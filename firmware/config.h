@@ -54,12 +54,12 @@
     #define FULLSTEP_TO_MICROMETER_RATIO 0.05
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
-//   #define STEPS_ALGORITHM move_steps
-   #define STEPS_ALGORITHM move_steps_accelstepper
+   #define STEPS_ALGORITHM move_steps
+//   #define STEPS_ALGORITHM move_steps_accelstepper
 //   #define STEPS_ALGORITHM move_steps_diagonal_micros
 //   #define STEPS_ALGORITHM move_steps_diagonal_slope
 
-    #define ACCELERATION 3000 // for use with FastAccelStepper
+    #define ACCELERATION 3000.0 // for use with AccelStepper
     #define MAX_SPEED 14000     // for use with AccelStepper
     #define WORKING_SPEED 14000  // for use with AccelStepper
     // for use with own implementation:
@@ -68,6 +68,7 @@
     // use WORKING_SPEED_DELAY >= 170 for safety
     #define WORKING_SPEED_DELAY 170
     #define HOMING_SPEED_DELAY 1000
+    #define HIGH_DELAY 2
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A1
