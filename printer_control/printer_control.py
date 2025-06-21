@@ -65,7 +65,7 @@ class Logging():
     def __init__(self):
         self.log_name = self.generate_logname()
         with open(f"{LOGDIR}/{self.log_name}", "w", encoding="Utf-8") as f:
-            f.write("Logging File\nq")
+            f.write(f"--------------------------------------\nLOG FILE {self.log_name}\n--------------------------------------\n")
 
     def generate_logname(self):
         time_raw = str(datetime.now())
