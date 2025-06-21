@@ -1,1 +1,6 @@
+# ignore FreeCad backup files
 *.FCBak
+
+# ignore tests and LOG files
+test*
+*.LOG
