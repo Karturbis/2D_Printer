@@ -86,6 +86,12 @@ def main():
         command_history.append(user_in)
         if user_in[0] == "exit" or user_in[0].lower() == "q":
             break
+        elif user_in[0].startswith("#"):
+            output = ""
+            for i in user_in:
+                output += f"{i} "
+            logprint(output.strip())
+            continue
         elif user_in[0].lower() == "gy" or user_in[0].lower() == "my":
             move_y(user_in[1])
         elif user_in[0].lower() == "gx" or user_in[0].lower() == "mx":
