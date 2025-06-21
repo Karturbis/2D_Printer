@@ -53,11 +53,11 @@
     #define STEPPER_BAUD_RATE 115200
     #define FULLSTEP_TO_MICROMETER_RATIO 0.05
     #define MICROSTEPPING 1
-    #define USE_ACCELSTEPPER false
+    #define STEPS_ALGORITHM move_steps//_diagonal_support // function name of the used algorithm for step by step moving
     #define MAX_ACCELERATION 3000 // for use with AccelStepper
     #define MAX_SPEED 14000     // for use with AccelStepper
     #define WORKING_SPEED 14000  // for use with AccelStepper
-    #define WORKING_SPEED_DELAY 160 // for use with own implementation
+    #define WORKING_SPEED_DELAY 170 // for use with own implementation
     #define HOMING_SPEED_DELAY 1000
 
     // Axis-Endswitches:
