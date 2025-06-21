@@ -6,7 +6,7 @@ from datetime import datetime
 import serial
 
 #consts:
-PORT = "/dev/ttyACM0"
+PORT = "/dev/ttyACM1"
 LOGDIR = "printer_control/logs"
 
 
@@ -61,7 +61,7 @@ class Logging():
     def __init__(self):
         self.log_name = self.generate_logname()
         with open(f"{LOGDIR}/{self.log_name}", "w", encoding="Utf-8") as f:
-            f.write("Logging File\n")
+            f.write("Logging File\nq")
 
     def generate_logname(self):
         time_raw = str(datetime.now())
@@ -90,7 +90,10 @@ def main():
             macros(user_in[1:])
         elif user_in[0].startswith("/"):
             logprint("first exit the program...")
-        elif user_in[0].startswith("g") and user_in[0].endswith(";"):
+        elif (user_in[0].startswith("g")
+            or user_in[0].startswith("h")
+            or user_in[0].startswith("u")
+            or user_in[0].startswith("d")) and user_in[0].endswith(";"):
             # give users the possibility, to send compley commands
             command = user_in[0]
             send(command)
