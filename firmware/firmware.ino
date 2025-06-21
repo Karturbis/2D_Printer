@@ -10,7 +10,7 @@
 #include "config.h" // include configuration
 
 // Function prototypes:
-int move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false);
+int move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
 int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
@@ -216,27 +216,37 @@ int move(float direction, int micrometers) {
   return error;
 }
 
-int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
   int pos_a = 0;
   int pos_b = 0;
+  if(!ignore_direction){
+    if(steps[0] < 0){
+      digitalWrite(MOTOR_A_DIR_PIN, HIGH);
+    }
+    else{
+      digitalWrite(MOTOR_A_DIR_PIN, LOW);
+    }
+    if(steps[1] < 0){
+      digitalWrite(MOTOR_B_DIR_PIN, HIGH);
+    }
+    else {
+      digitalWrite(MOTOR_B_DIR_PIN, LOW);    
+    }
+  }
   while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
     if(pos_a < steps[0]) {
-      digitalWrite(MOTOR_A_DIR_PIN, LOW);
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
       pos_a ++;
     }
     else if(pos_a > steps[0]) {
-      digitalWrite(MOTOR_A_DIR_PIN, HIGH);
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
       pos_a --;
     }
     if(pos_b < steps[1]) {
-      digitalWrite(MOTOR_B_DIR_PIN, LOW);
       digitalWrite(MOTOR_B_STEP_PIN, HIGH);
       pos_b ++;
     }
     else if(pos_b > steps[1]) {
-      digitalWrite(MOTOR_B_DIR_PIN, HIGH);
       digitalWrite(MOTOR_B_STEP_PIN, HIGH);
       pos_b --;
     }
@@ -529,6 +539,14 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   else {
     digitalWrite(MOTOR_A_DIR_PIN, LOW);
   }
+  if(!(steps[0] && steps[1]) || abs(steps[0]) == abs(steps[1])){
+    Serial.println("DEBUG:Using move_steps to move");
+    Serial.print("DEBUG:steps A are: ");
+    Serial.println(steps[0]);
+    Serial.print("DEBUG:steps B are: ");
+    Serial.println(steps[1]);
+    return move_steps(steps);
+  }
   steps[0] = abs(steps[0]);
   steps[1] = abs(steps[1]);
   // calculate slope and long / short side:
@@ -539,43 +557,29 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   long steps_short_position = 0;
   long steps_long_position = 0;
   float slope;
-  if(steps[0] && steps[1]){
-    if(steps[0] == steps[1]){
-      Serial.println("DEBUG:Steps A == B");
-      Serial.println("WARNING:Not implemented yet, please move in diag dir.");
-      return 0;
-    }
-    else {
-      if(steps[0] < steps[1]){
-        Serial.println("DEBUG:Steps: A < B");
-        long_side = 1;
-        short_side = 0;
-        step_pin_short_side = MOTOR_A_STEP_PIN;
-        step_pin_long_side = MOTOR_B_STEP_PIN;
-      }
-      else {
-        Serial.println("DEBUG:Steps: B < A");
-        long_side = 0;
-        short_side = 1;
-        step_pin_short_side = MOTOR_B_STEP_PIN;
-        step_pin_long_side = MOTOR_A_STEP_PIN;
-        Serial.print("DEBUG:short side: ");
-        Serial.println(short_side);
-        Serial.print("DEBUG:steps short side: ");
-        Serial.println(steps[short_side]);
-        Serial.print("DEBUG:long side: ");
-        Serial.println(long_side);
-        Serial.print("DEBUG:steps long side: ");
-        Serial.println(steps[long_side]);
-      }
-      slope = (float) steps[short_side] / (float) steps[long_side];
-    }
-
+  if(steps[0] < steps[1]){
+    Serial.println("DEBUG:Steps: A < B");
+    long_side = 1;
+    short_side = 0;
+    step_pin_short_side = MOTOR_A_STEP_PIN;
+    step_pin_long_side = MOTOR_B_STEP_PIN;
+    slope = (float) steps[short_side] / (float) steps[long_side];
   }
-  else { // if the line is printable by move_steps, print the line with move_steps
-    // Ny implemented
-    Serial.println("WARNING:Not implemented yet! please move diagonal");
-    return 0;
+  else {
+    Serial.println("DEBUG:Steps: B < A");
+    long_side = 0;
+    short_side = 1;
+    step_pin_short_side = MOTOR_B_STEP_PIN;
+    step_pin_long_side = MOTOR_A_STEP_PIN;
+    Serial.print("DEBUG:short side: ");
+    Serial.println(short_side);
+    Serial.print("DEBUG:steps short side: ");
+    Serial.println(steps[short_side]);
+    Serial.print("DEBUG:long side: ");
+    Serial.println(long_side);
+    Serial.print("DEBUG:steps long side: ");
+    Serial.println(steps[long_side]);
+    slope = (float) steps[short_side] / (float) steps[long_side];
   }
   Serial.print("DEBUG:Slope: ");
   Serial.println(slope);
@@ -608,10 +612,9 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
       }
     }
   }
-    digitalWrite(MOTOR_A_STEP_PIN, LOW);
-    digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println("DEBUG:motor a LOW");
-    Serial.println("DEBUG:motor B LOW");
+  digitalWrite(MOTOR_A_STEP_PIN, LOW);
+  digitalWrite(MOTOR_B_STEP_PIN, LOW);
+  Serial.println("DEBUG:motor a LOW");
+  Serial.println("DEBUG:motor B LOW");
   return 0;
-
 }
