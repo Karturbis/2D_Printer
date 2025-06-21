@@ -4,3 +4,6 @@
 # ignore tests and LOG files
 test*
 *.LOG
+
+# ignore print files:
+print_files/*
