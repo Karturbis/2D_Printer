@@ -58,14 +58,14 @@ def move(dist:int, angle:float):
 
 def print_file(filename:str):
     start_macro(f"print({filename})")
-    send("h;")
-    listen()
+    print("start opening")
     try:
         with open(f"{PRINTFILEDIR}/{filename}", "r", encoding="Utf-8") as reader:
             lines = reader.readlines()
     except FileNotFoundError as e:
         logprint(f"ERROR:Could not open the file: {e}")
         return
+    print("finished opening")
     logprint("#############################")
     sleep(0.5)
     logprint("##### Starting Print ... ####")
@@ -73,9 +73,8 @@ def print_file(filename:str):
     logprint("#############################")
     sleep(0.5)
     for command in lines:
-        if not command.startswith("h"):
-            send(command)
-            listen()
+        send(command)
+        listen()
     logprint("#############################")
     sleep(0.5)
     logprint("##### Finished Print ... ####")
@@ -90,6 +89,8 @@ def print_file(filename:str):
 class Logging():
 
     def __init__(self):
+        self.log_level: int = 1
+        self.log_levels: list = ["LOOPDEBUG", "DEBUG", "LOG", "WARNING", "CRITICAL"]
         self.log_name = self.generate_logname()
         with open(f"{LOGDIR}/{self.log_name}", "w", encoding="Utf-8") as f:
             f.write(f"--------------------------------------\nLOG FILE {self.log_name}\n--------------------------------------\n")
@@ -105,6 +106,21 @@ class Logging():
             writer.writelines(f"LOG({time_now[11:]}): {data}\n")
         print(data)
 
+    def get_loglevels(self):
+        return self.log_levels
+
+    def get_log_level(self):
+        return self.log_level
+
+    def get_to_ignore(self):
+        return self.log_levels[0:self.log_level]
+    
+    def set_log_level(self, log_level):
+        try:
+            log_level = int(log_level)
+            self.log_level = log_level
+        except TypeError:
+            self.log_level = self.log_levels.index(log_level)
 
 class Interface():
 
@@ -112,7 +128,7 @@ class Interface():
         self.overall_command_number = 0
         self.macro_command_number = 0
         self.macro = ""
-        self.ser = serial.Serial(PORT, baudrate=115200, timeout=1)
+        self.ser = serial.Serial(PORT, baudrate=115200, timeout=20)
 
     def listen(self):
         while not self.ser.in_waiting:  # wait until traffic comes in:
@@ -122,10 +138,11 @@ class Interface():
             ret = self.ser.readline()
             if ret:
                 decoded_ret = ret.decode("ascii").strip("\r\n")
-                if not decoded_ret.startswith("LOOP"):
-                    logprint(decoded_ret)
                 if decoded_ret == "0":
+                    logprint("0")
                     break
+                if not decoded_ret.startswith(tuple(logging.get_to_ignore())):
+                    logprint(decoded_ret)
             else:
                 break
 
@@ -192,6 +209,9 @@ def main():
             send(command)
         elif user_in[0].lower() == "p":
             print_file(user_in[1])
+            continue
+        elif user_in[0].lower() == "loglevel" or user_in[0].lower() == "ll":
+            logging.set_log_level(user_in[1])
             continue
         else:
             logprint("Unknown command, not sending")
