@@ -162,6 +162,7 @@ def main():
         user_in = input("Enter command: ").split(" ")
         command_history.append(user_in)
         if user_in[0] == "exit" or user_in[0].lower() == "q":
+            logprint("User abort")
             break
         elif user_in[0].startswith("#"):
             output = ""
@@ -196,7 +197,9 @@ def main():
             logprint("Unknown command, not sending")
             continue
         listen()
+    logprint("Disconecting from the Printer")
     disconnect()
+    logprint("Quiting the programm")
 
 if __name__ == "__main__":
     # init logging:
