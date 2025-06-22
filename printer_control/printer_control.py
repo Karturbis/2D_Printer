@@ -30,12 +30,15 @@ def macros(arguments):
         move(-dist, 0.0)
         listen()
         move(-dist, pi/2)
+        end_macro()
     elif arguments[0].lower() == "t0":
         start_macro("t0")
         send("g5.7,20000;")
+        end_macro()
     elif arguments[0].lower() == "-t0":
         start_macro("-t0")
         send("g5.7,-20000;")
+        end_macro()
 
 def move(dist:int, angle:float):
     dist = int(dist)
@@ -78,6 +81,7 @@ def print_file(filename:str):
     logprint("##### Finished Print ... ####")
     sleep(0.5)
     logprint("#############################")
+    end_macro()
 
 ###################
 #### Logging: #####
@@ -100,6 +104,7 @@ class Logging():
             time_now = str(datetime.now())
             writer.writelines(f"LOG({time_now[11:]}): {data}\n")
         print(data)
+
 
 class Interface():
 
@@ -127,7 +132,7 @@ class Interface():
     def send(self, command:str):
         logprint(f"Sending command number {self.overall_command_number},")
         if self.macro:
-            logprint(f"Macro: {self.macro}, macro command number {self.macro_command_number},")
+            logprint(f"Macro: {self.macro}, macro command number: {self.macro_command_number},")
             self.macro_command_number += 1
         self.overall_command_number += 1
         logprint(f"which is: {command}")
@@ -146,8 +151,6 @@ class Interface():
         logprint("----------------------------------")
         logprint(f"## Finished macro {macro_name} ##")
         logprint("----------------------------------")
-
-
 
     def disconnect(self):
         self.ser.close()
