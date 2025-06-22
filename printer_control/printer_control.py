@@ -21,6 +21,7 @@ def sign(number: int):
 
 def macros(arguments):
     if arguments[0].lower() == "square" or arguments[0].lower() == "s":
+        start_macro("square")
         dist = int(arguments[1])
         move(dist, 0.0)
         listen()
@@ -30,8 +31,10 @@ def macros(arguments):
         listen()
         move(-dist, pi/2)
     elif arguments[0].lower() == "t0":
+        start_macro("t0")
         send("g5.7,20000;")
     elif arguments[0].lower() == "-t0":
+        start_macro("-t0")
         send("g5.7,-20000;")
 
 def move(dist:int, angle:float):
@@ -51,6 +54,7 @@ def move(dist:int, angle:float):
     send(command)
 
 def print_file(filename:str):
+    start_macro(f"print({filename})")
     send("h;")
     listen()
     try:
@@ -100,7 +104,9 @@ class Logging():
 class Interface():
 
     def __init__(self):
-        self.command_number = 0
+        self.overall_command_number = 0
+        self.macro_command_number = 0
+        self.macro = ""
         self.ser = serial.Serial(PORT, baudrate=115200, timeout=1)
 
     def listen(self):
@@ -119,12 +125,30 @@ class Interface():
                 break
 
     def send(self, command:str):
-        logprint(f"Sending command number {self.command_number},")
-        self.command_number += 1
+        logprint(f"Sending command number {self.overall_command_number},")
+        if self.macro:
+            logprint(f"Macro: {self.macro}, macro command number {self.macro_command_number},")
+            self.macro_command_number += 1
+        self.overall_command_number += 1
         logprint(f"which is: {command}")
         command = f"{command}\n".encode("ascii")
         self.ser.write(command)
-    
+
+    def start_macro(self, macro_name:str):
+        self.macro = macro_name
+        logprint("----------------------------------")
+        logprint(f"## Starting macro {macro_name} ##")
+        logprint("----------------------------------")
+
+    def end_macro(self):
+        self.macro = ""
+        self.macro_command_number = 0
+        logprint("----------------------------------")
+        logprint(f"## Finished macro {macro_name} ##")
+        logprint("----------------------------------")
+
+
+
     def disconnect(self):
         self.ser.close()
 
@@ -180,4 +204,6 @@ if __name__ == "__main__":
     listen = interface.listen
     send = interface.send
     disconnect = interface.disconnect
+    start_macro = interface.start_macro
+    end_macro = interface.end_macro
     main()
