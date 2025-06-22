@@ -74,7 +74,11 @@ def print_file(filename:str):
     sleep(0.5)
     for command in lines:
         send(command)
-        listen()
+        error = listen()
+        if error:
+            logprint(f"CRITICAL:Error {error} occured, stopping the print!")
+            end_macro()
+            return
     logprint("#############################")
     sleep(0.5)
     logprint("##### Finished Print ... ####")
@@ -130,7 +134,7 @@ class Interface():
         self.macro = ""
         self.ser = serial.Serial(PORT, baudrate=115200, timeout=20)
 
-    def listen(self):
+    def listen(self) -> int:
         while not self.ser.in_waiting:  # wait until traffic comes in:
             pass
         reading = True
@@ -138,13 +142,16 @@ class Interface():
             ret = self.ser.readline()
             if ret:
                 decoded_ret = ret.decode("ascii").strip("\r\n")
-                if decoded_ret == "0":
-                    logprint("0")
-                    break
+                try:
+                    decoded_ret = int(decoded_ret)
+                    logprint(decoded_ret)
+                    return decoded_ret
+                except TypeError:
+                    pass
                 if not decoded_ret.startswith(tuple(logging.get_to_ignore())):
                     logprint(decoded_ret)
             else:
-                break
+                return 0
 
     def send(self, command:str):
         logprint(f"Sending command number {self.overall_command_number},")
