@@ -10,65 +10,49 @@ import serial
 PORT = "/dev/ttyACM0"
 LOGDIR = "printer_control/logs"
 PRINTFILEDIR = "printer_control/print_files"
-
-
-ser = serial.Serial(PORT, baudrate=115200, timeout=1)
+MAX_MOVE_LENGTH = 20000
 
 ###################
 #### Movement: ####
 ###################
 
+def sign(number: int):
+    return (number  > 0) - (number < 0)
+
 def macros(arguments):
     if arguments[0].lower() == "square" or arguments[0].lower() == "s":
         dist = int(arguments[1])
-        move_x(dist)
+        move(dist, 0.0)
         listen()
-        move_y(dist)
+        move(dist, pi/2)
         listen()
-        move_x(-dist)
+        move(-dist, 0.0)
         listen()
-        move_y(-dist)
+        move(-dist, pi/2)
     elif arguments[0].lower() == "t0":
         send("g5.7,20000;")
     elif arguments[0].lower() == "-t0":
         send("g5.7,-20000;")
 
-def listen():
-    while not ser.in_waiting:  # wait until traffic comes in:
-        pass
-    reading = True
-    while reading:  #read incoming traffic
-        ret = ser.readline()
-        if ret:
-            decoded_ret = ret.decode("ascii").strip("\r\n")
-            if not decoded_ret.startswith("LOOP"):
-                logprint(decoded_ret)
-            if decoded_ret == 0:
-                break
-        else:
-            break
-
-def send(command:str):
-    logprint(f"Sending: {command}")
-    command = f"{command}\n".encode("ascii")
-    ser.write(command)
-
-def move_x(dist:int):
-    command = f"g{0.0},{dist};"
-    send(command)
-
-def move_y(dist:str):
-    command = f"g{pi/2},{dist};"
+def move(dist:int, angle:float):
+    dist = int(dist)
+    angle = float(angle)
+    sign_dist = sign(dist)
+    dist = abs(dist)
+    if dist < MAX_MOVE_LENGTH:
+        command = f"g{angle},{sign_dist * dist};"
+    else:
+        floor_div = dist//MAX_MOVE_LENGTH
+        command = f"g{angle},{sign_dist * MAX_MOVE_LENGTH};"
+        for _ in range(floor_div):
+            send(command)
+            listen()
+        command = f"g{angle},{sign_dist * (dist%MAX_MOVE_LENGTH)};"
     send(command)
 
 def print_file(filename:str):
     send("h;")
     listen()
-    print("homed")
-    for _ in range(10):
-        move_x(-20000)
-        listen()
-    print("moved")
     try:
         with open(f"{PRINTFILEDIR}/{filename}", "r", encoding="Utf-8") as reader:
             lines = reader.readlines()
@@ -82,15 +66,14 @@ def print_file(filename:str):
     logprint("#############################")
     sleep(0.5)
     for command in lines:
-        send(command)
-        listen()
+        if not command.startswith("h"):
+            send(command)
+            listen()
     logprint("#############################")
     sleep(0.5)
     logprint("##### Finished Print ... ####")
     sleep(0.5)
     logprint("#############################")
-
-
 
 ###################
 #### Logging: #####
@@ -114,6 +97,37 @@ class Logging():
             writer.writelines(f"LOG({time_now[11:]}): {data}\n")
         print(data)
 
+class Interface():
+
+    def __init__(self):
+        self.command_number = 0
+        self.ser = serial.Serial(PORT, baudrate=115200, timeout=1)
+
+    def listen(self):
+        while not self.ser.in_waiting:  # wait until traffic comes in:
+            pass
+        reading = True
+        while reading:  #read incoming traffic
+            ret = self.ser.readline()
+            if ret:
+                decoded_ret = ret.decode("ascii").strip("\r\n")
+                if not decoded_ret.startswith("LOOP"):
+                    logprint(decoded_ret)
+                if decoded_ret == "0":
+                    break
+            else:
+                break
+
+    def send(self, command:str):
+        logprint(f"Sending command number {self.command_number},")
+        self.command_number += 1
+        logprint(f"which is: {command}")
+        command = f"{command}\n".encode("ascii")
+        self.ser.write(command)
+    
+    def disconnect(self):
+        self.ser.close()
+
 
 def main():
     command_history = []
@@ -128,10 +142,15 @@ def main():
                 output += f"{i} "
             logprint(output.strip())
             continue
-        elif user_in[0].lower() == "gy" or user_in[0].lower() == "my":
-            move_y(user_in[1])
-        elif user_in[0].lower() == "gx" or user_in[0].lower() == "mx":
-            move_x(user_in[1])
+        elif user_in[0].lower() == "y":
+            move(user_in[1], pi/2)
+        elif user_in[0].lower() == "x":
+            move(user_in[1], 0.0)
+        elif user_in[0].lower() == "a":
+            if len(user_in) > 2:
+                move(user_in[2], user_in[1])
+            else:
+                move(10000, user_in[1])
         elif user_in[0] == "m":
             macros(user_in[1:])
         elif user_in[0].startswith("/"):
@@ -150,9 +169,15 @@ def main():
             logprint("Unknown command, not sending")
             continue
         listen()
-    ser.close()
+    disconnect()
 
 if __name__ == "__main__":
+    # init logging:
     logging = Logging()
     logprint = logging.logprint
+    # inti interface with Printer:
+    interface = Interface()
+    listen = interface.listen
+    send = interface.send
+    disconnect = interface.disconnect
     main()
