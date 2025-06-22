@@ -6,4 +6,4 @@ test*
 *.LOG
 
 # ignore print files:
-print_files/*
+printer_control/print_files/*
