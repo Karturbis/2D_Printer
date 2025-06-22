@@ -5,7 +5,7 @@
 
 // general:
 
-#define SOFTWARE_VERSION "Alpha"
+#define SOFTWARE_VERSION "Beta"
 
 // Connection with the PC:
 
@@ -67,8 +67,11 @@
     // for y axis: WORKING_SPEED_DELAY >= 155
     // use WORKING_SPEED_DELAY >= 170 for safety
     #define WORKING_SPEED_DELAY 170
-    #define HOMING_SPEED_DELAY 1000
-    #define HIGH_DELAY 2
+    #define HOMING_SPEED_DELAY 1200
+    // homing offsets in 10 000 micrometer
+    #define HOMING_OFFSET_X -20
+    #define HOMING_OFFSET_Y 1
+    #define HIGH_DELAY 1
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A1

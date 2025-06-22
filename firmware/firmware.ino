@@ -127,37 +127,35 @@ void loop() {
   digitalWrite(STATUS_LED_TOP_PIN, LOW);
   String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
   command.trim();
+  Serial.print("LOG:Command: ");
+  Serial.println(command);
   if(command.startsWith(GO_TO)){
-    Serial.print("Command: ");
-    Serial.println(command);
     String direction = command.substring(1, command.indexOf(SEPERATOR)); // string until the seperator, ignoring first char
     String distance = command.substring(command.indexOf(SEPERATOR)+1); // string until terminator, not include seperator
-    Serial.print("Direction: ");
+    Serial.print("DEBUG:Direction: ");
     Serial.println(direction);
-    Serial.print("Distance: ");
+    Serial.print("DEBUG:Distance: ");
     Serial.println(distance);
     int error = move(direction.toFloat(), distance.toInt()); // go to
     if(error == 1){
-      Serial.println("Toolhead ran into wall, x-axis 0 triggered!");
-      Serial.println("Home the Printer to move again!");
+      Serial.println("CRITICAL:Toolhead ran into wall, x-axis 0 triggered!");
+      Serial.println("CRITICAL:Home the Printer to move again!");
     }
     else if(error == 2){
-      Serial.println("Toolhead ran into wall, x-axis 1 triggered!");
-      Serial.println("Home the Printer to move again!");
+      Serial.println("CRITICAL:Toolhead ran into wall, x-axis 1 triggered!");
+      Serial.println("CRITICAL:Home the Printer to move again!");
     }
     else if(error == 3){
-      Serial.println("Toolhead ran into wall, y-axis 0 triggered!");
-      Serial.println("Home the Printer to move again!");
+      Serial.println("CRITICAL:Toolhead ran into wall, y-axis 0 triggered!");
+      Serial.println("CRITICAL:Home the Printer to move again!");
     }
     else if(error == 4){
-      Serial.println("Toolhead ran into wall, y-axis 1 triggered!");
-      Serial.println("Home the Printer to move again!");
+      Serial.println("CRITICAL:Toolhead ran into wall, y-axis 1 triggered!");
+      Serial.println("CRITICAL:Home the Printer to move again!");
     }
     Serial.println(error);
   }
   else if (command.startsWith(HOMING)) {
-  homeing();
-  homeing();
   homeing();
   Serial.println(0);
   }
@@ -172,7 +170,7 @@ void loop() {
 }
 
 int move(float direction, int micrometers) {
-  Serial.println("Starting to move ...");
+  Serial.println("DEBUG:Starting to move ...");
   // direction in radians
   int steps[2];
   long delta_x = (long)(sin(direction)*micrometers);
@@ -192,16 +190,16 @@ int move(float direction, int micrometers) {
   steps[1] = (int)(delta_x - delta_y)*STEP_TO_MICROMETER_RATIO;
   stepper_a.move(steps[0]);
   stepper_b.move(steps[1]);
-  Serial.println("-----------------------------------");
-  Serial.println("######## Start moving #############");
-  Serial.println("-----------------------------------");
-  Serial.print("Delta_X: ");
+  Serial.println("LOG:-----------------------------------");
+  Serial.println("LOG:######## Start moving #############");
+  Serial.println("LOG:-----------------------------------");
+  Serial.print("DEBUG:Delta_X: ");
   Serial.println(delta_x);
-  Serial.print("Delta_y: ");
+  Serial.print("DEBUG:Delta_y: ");
   Serial.println(delta_y);
-  Serial.print("Steps[0]: ");
+  Serial.print("DEBUG:Steps[0]: ");
   Serial.println(steps[0]);
-  Serial.print("Steps[1]: ");
+  Serial.print("DEBUG:Steps[1]: ");
   Serial.println(steps[1]);
   // move:
   int error;
@@ -209,7 +207,7 @@ int move(float direction, int micrometers) {
   // Update Position:
   position[0] = position[0] + delta_x;
   position[1] = position[1] + delta_y;
-  Serial.print("New Position: ");
+  Serial.print("LOG:New Position: ");
   Serial.print(position[0]);
   Serial.print(" ");
   Serial.println(position[1]);
@@ -256,7 +254,7 @@ int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool
         return collision;
       }
     }
-    delayMicroseconds(WORKING_SPEED_DELAY);
+    delayMicroseconds(working_speed_delay);
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
   }
@@ -298,54 +296,76 @@ int check_collision() {
   
 }
 
-void homeing() {
+void _homeing_x(int speed_delay) {
   int steps[2];
-  disengage_toolhead();
   // drive to x-axis stop using move:
-  Serial.println("Start Homing ...");
-  Serial.println("Homing X-Axis ...");
+  Serial.println("LOG:Homing X-Axis ...");
   bool stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   steps[0] = 1;
   steps[1] = 1;
   while(!stop) {
-    move_steps(steps, HOMING_SPEED_DELAY, true);
+    move_steps(steps, speed_delay, true);
     stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
-  Serial.println("Hit the trigger, moving back");
+  Serial.println("LOG:Hit the trigger, moving back");
   // driving until the switch is not triggered anymore:
   steps[0] = -1;
   steps[1] = -1;
   while (stop) {
-    move_steps(steps, HOMING_SPEED_DELAY, true);
+    move_steps(steps, speed_delay, true);
     stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
   }
   position[0] = 0;
-  Serial.println("Finished Homing X-Axis");
-  Serial.println("Backing up on X-Axis ...");
+  Serial.println("LOG:Finished Homing X-Axis");
+  Serial.println("LOG:Backing up on X-Axis ...");
   move(HALF_PI, 10000);
+}
+
+void _homeing_y(int speed_delay){
+  int steps[2];
   // drive to y-axis stop using move
-  Serial.println("Homing Y-Axis ...");
-  stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  Serial.println("LOG:Homing Y-Axis ...");
+  bool stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
   steps[0] = 1;
   steps[1] = -1;
   while(!stop) {
-    move_steps(steps, HOMING_SPEED_DELAY, true);
+    move_steps(steps, speed_delay, true);
     stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
   }
-  Serial.println("Hit the trigger, moving back");
+  Serial.println("LOG:Hit the trigger, moving back");
   // driving until the switch is not triggered anymore:
   steps[0] = -1;
   steps[1] = 1;
   while (stop) {
-    move_steps(steps, HOMING_SPEED_DELAY, true);
+    move_steps(steps, speed_delay, true);
     stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
   }
   position[1] = 0;
-  Serial.println("Finished Homing Y-Axis");
-  Serial.println("Backing up on Y-Axis ...");
+  Serial.println("LOG:Finished Homing Y-Axis");
+  Serial.println("LOG:Backing up on Y-Axis ...");
   move(PI, 10000);
-  Serial.println("Finished Homing");
-  //move(1.5, 1000);
+  Serial.println("LOG:Finished Homing");
+}
+
+void homeing() {
+  // make sure toolhead is up:
+  Serial.println("LOG:Start Homing ...");
+  disengage_toolhead();
+  // homing x two times, fast than slow:
+  _homeing_x(WORKING_SPEED_DELAY);
+  _homeing_x(HOMING_SPEED_DELAY);
+  // homing y two times, fast than slow:
+  _homeing_y(WORKING_SPEED_DELAY);
+  _homeing_y(HOMING_SPEED_DELAY);
+  // move to sofware home position:
+  uint8_t sign_x = (HOMING_OFFSET_X > 0) - (HOMING_OFFSET_X < 0);
+  uint8_t sign_y = (HOMING_OFFSET_Y > 0) - (HOMING_OFFSET_Y < 0);
+  for(int offset_x = 0; offset_x < abs(HOMING_OFFSET_X); offset_x ++){
+    move(0.0, sign_x*10000);
+  }
+  for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
+    move(HALF_PI, sign_y*10000);
+  }
 }
 
 // Toolhead:
@@ -362,7 +382,7 @@ void test_motor(){
   while (true) {
     digitalWrite(MOTOR_A_DIR_PIN, HIGH);
     digitalWrite(MOTOR_B_DIR_PIN, HIGH);
-    Serial.println("Direction HIGH");
+    Serial.println("DEBUG:Direction HIGH");
     for (int i = 0; i < 500; i++) {
         digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
         digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
@@ -370,7 +390,7 @@ void test_motor(){
     }
     digitalWrite(MOTOR_A_DIR_PIN, LOW);
     digitalWrite(MOTOR_B_DIR_PIN, LOW);
-    Serial.println("Direction LOW");
+    Serial.println("DEBUG:Direction LOW");
     for (int i = 0; i < 500; i++) {
         digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
         digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
@@ -381,14 +401,14 @@ void test_motor(){
 }
 
 int move_steps_accelstepper(int steps[2]) {
-  Serial.println("Started move_steps_accelstepper");
+  Serial.println("LOG:Started move_steps_accelstepper");
   bool done_a = false;
   bool done_b = false;
   stepper_a.move(steps[0]);
   stepper_b.move(steps[1]);
   uint8_t collision;
   while (!(done_a && done_b)) {
-    Serial.println("started while loop");
+    Serial.println("LOOPDEBUG:started while loop");
     done_a = !stepper_a.run();
     done_b = !stepper_b.run();
     collision = check_collision();
@@ -399,9 +419,9 @@ int move_steps_accelstepper(int steps[2]) {
 }
 
 int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
-  Serial.println("-------------------------------------------------------");
-  Serial.println("####### move_steps_diagonal_micros starting... ########");
-  Serial.println("-------------------------------------------------------");
+  Serial.println("LOG:-------------------------------------------------------");
+  Serial.println("LOG:####### move_steps_diagonal_micros starting... ########");
+  Serial.println("LOG:-------------------------------------------------------");
   bool motor_a_state = false;
   bool motor_b_state = false;
   int pos_a = 0;
@@ -515,16 +535,16 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
   }
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println("motor a LOW");
-    Serial.println("motor B LOW");
+    Serial.println("DEBUG:motor a LOW");
+    Serial.println("DEBUG:motor B LOW");
   return 0;
 
 }
 
 int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
-  Serial.println("-------------------------------------------------------");
-  Serial.println("######## move_steps_diagonal_slope starting... ########");
-  Serial.println("-------------------------------------------------------");
+  Serial.println("LOG:-------------------------------------------------------");
+  Serial.println("LOG:######## move_steps_diagonal_slope starting... ########");
+  Serial.println("LOG:-------------------------------------------------------");
   bool done = false;
   // set the directions of the steppers:
   if(steps[0] < 0) {
