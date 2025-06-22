@@ -149,7 +149,7 @@ class Interface():
         self.macro = ""
         self.macro_command_number = 0
         logprint("----------------------------------")
-        logprint(f"## Finished macro {macro_name} ##")
+        logprint(f"## Finished macro {self.macro} ##")
         logprint("----------------------------------")
 
     def disconnect(self):
