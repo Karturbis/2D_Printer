@@ -23,7 +23,7 @@ bool manual_mode = false;
 bool expert_mode = false;
 int position[2];
 
-// initialize TMC2208 class, use Hardware Serial Port for communication
+// initialize TMC2208 class, use Software Serial Port for communication
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
 TMC2208Stepper driver_b = TMC2208Stepper(MOTOR_B_RX_PIN, MOTOR_B_TX_PIN);
 
@@ -62,7 +62,7 @@ void setup() {
         toolhead_servo.write((SERVO_UP_POSITION));
 
         // Motor Setup:
-        // init motr pins:
+        // init motor pins:
         pinMode(MOTOR_A_EN_PIN, OUTPUT);
         pinMode(MOTOR_B_EN_PIN, OUTPUT);
         pinMode(MOTOR_A_STEP_PIN, OUTPUT);
@@ -156,7 +156,7 @@ void loop() {
     Serial.println(error);
   }
   else if (command.startsWith(HOMING)) {
-  homeing();
+  homing();
   Serial.println(0);
   }
   else if (command.startsWith(DISENGAGE_TOOLHEAD)) {
@@ -293,10 +293,9 @@ int check_collision() {
   }
   // no collision:
   return 0;
-  
 }
 
-void _homeing_x(int speed_delay) {
+void _homing_x(int speed_delay) {
   int steps[2];
   // drive to x-axis stop using move:
   Serial.println("LOG:Homing X-Axis ...");
@@ -321,7 +320,7 @@ void _homeing_x(int speed_delay) {
   move(HALF_PI, 10000);
 }
 
-void _homeing_y(int speed_delay){
+void _homing_y(int speed_delay){
   int steps[2];
   // drive to y-axis stop using move
   Serial.println("LOG:Homing Y-Axis ...");
@@ -347,16 +346,16 @@ void _homeing_y(int speed_delay){
   Serial.println("LOG:Finished Homing");
 }
 
-void homeing() {
+void homing() {
   // make sure toolhead is up:
   Serial.println("LOG:Start Homing ...");
   disengage_toolhead();
   // homing x two times, fast than slow:
-  _homeing_x(WORKING_SPEED_DELAY);
-  _homeing_x(HOMING_SPEED_DELAY);
+  _homing_x(WORKING_SPEED_DELAY);
+  _homing_x(HOMING_SPEED_DELAY);
   // homing y two times, fast than slow:
-  _homeing_y(WORKING_SPEED_DELAY);
-  _homeing_y(HOMING_SPEED_DELAY);
+  _homing_y(WORKING_SPEED_DELAY);
+  _homing_y(HOMING_SPEED_DELAY);
   // move to sofware home position:
   uint8_t sign_x = (HOMING_OFFSET_X > 0) - (HOMING_OFFSET_X < 0);
   uint8_t sign_y = (HOMING_OFFSET_Y > 0) - (HOMING_OFFSET_Y < 0);
@@ -364,7 +363,7 @@ void homeing() {
     move(0.0, sign_x*10000);
   }
   for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
-    move(HALF_PI, sign_y*10000);
+    move(HALF_PI, sign_y10000);
   }
 }
 
