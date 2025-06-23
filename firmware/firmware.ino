@@ -178,7 +178,7 @@ int move(float direction, int micrometers) {
   if(TOGGLE_X_Y_AXIS){
     int new_delta_x = delta_y;
     delta_y = delta_x;
-    delta_x = delta_y;
+    delta_x = new_delta_x;
   }
   if(TOGGLE_X_AXIS){
     delta_x = -delta_x;
@@ -188,8 +188,6 @@ int move(float direction, int micrometers) {
   }
   steps[0] = (int)(delta_x + delta_y)*STEP_TO_MICROMETER_RATIO;
   steps[1] = (int)(delta_x - delta_y)*STEP_TO_MICROMETER_RATIO;
-  stepper_a.move(steps[0]);
-  stepper_b.move(steps[1]);
   Serial.println("LOG:-----------------------------------");
   Serial.println("LOG:######## Start moving #############");
   Serial.println("LOG:-----------------------------------");
@@ -259,7 +257,6 @@ int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
   }
   return 0;
-
 }
 
 int check_collision() {
