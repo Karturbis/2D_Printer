@@ -146,7 +146,7 @@ class Interface():
                     decoded_ret = int(decoded_ret)
                     logprint(decoded_ret)
                     return decoded_ret
-                except TypeError:
+                except ValueError:
                     pass
                 if not decoded_ret.startswith(tuple(logging.get_to_ignore())):
                     logprint(decoded_ret)
