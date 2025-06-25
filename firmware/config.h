@@ -9,7 +9,7 @@
 
 // Connection with the PC:
 
-#define TOGGLE_X_AXIS true
+#define TOGGLE_X_AXIS false
 #define TOGGLE_Y_AXIS false
 #define TOGGLE_X_Y_AXIS false
 
@@ -22,31 +22,40 @@
 #define GO_TO "g"
 #define DISENGAGE_TOOLHEAD "u"  
 #define ENGAGE_TOOLHEAD "d"
+#define CHANGE_TOOL "c"
 
 
 // Hardware Configuration:
 
-    // Led Pins:
-    #define TRX_LED_PIN 1
-    #define STATUS_LED_TOP_PIN A5
-    #define STATUS_LED_MID_PIN 3
-    #define STATUS_LED_BOT_PIN 4
-
-    // Button pins
-    #define HOMING_BUTTON_PIN 5
-    #define WORKLIGHT_BUTTON_PIN 6
+    //// Led Pins:
+    //#define TRX_LED_PIN 1
+    //#define STATUS_LED_TOP_PIN A5
+    //#define STATUS_LED_MID_PIN 3
+    //#define STATUS_LED_BOT_PIN 4
+    /*
+        LEDs:
+        TX = Qa
+        RX = Qb
+        Status top = Qc
+        Status mid = Qd
+        Satus bot = Qe
+    */
+    // Bitshift register Pins;
+    #define SER 13
+    #define SRCLK A4
+    #define RCLK A5
 
     // Motors:
     //Pins:
     #define MOTOR_A_EN_PIN 2
-    #define MOTOR_A_DIR_PIN 3
-    #define MOTOR_A_STEP_PIN 9
+    #define MOTOR_A_DIR_PIN 4
+    #define MOTOR_A_STEP_PIN 3
     #define MOTOR_A_RX_PIN 5
     #define MOTOR_A_TX_PIN 6
     #define MOTOR_B_EN_PIN 7
-    #define MOTOR_B_DIR_PIN 4
-    #define MOTOR_B_STEP_PIN 10
-    #define MOTOR_B_RX_PIN 8
+    #define MOTOR_B_DIR_PIN 9
+    #define MOTOR_B_STEP_PIN 8
+    #define MOTOR_B_RX_PIN 10
     #define MOTOR_B_TX_PIN 11
     //other:
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
@@ -66,23 +75,24 @@
     // for x axis: WORKING_SPEED_DELAY >= 134
     // for y axis: WORKING_SPEED_DELAY >= 155
     // use WORKING_SPEED_DELAY >= 170 for safety
-    #define WORKING_SPEED_DELAY 170
-    #define HOMING_SPEED_DELAY 1200
+    #define WORKING_SPEED_DELAY 2000
+    #define HOMING_SPEED_DELAY 4000
     // homing offsets in 10 000 micrometer
     #define HOMING_OFFSET_X -20
     #define HOMING_OFFSET_Y 1
     #define HIGH_DELAY 1
 
     // Axis-Endswitches:
-    #define X_AXIS_END_SWITCH_0_PIN A1
-    #define X_AXIS_END_SWITCH_1_PIN A0
+    #define X_AXIS_END_SWITCH_0_PIN A0
+    #define X_AXIS_END_SWITCH_1_PIN A1
     #define Y_AXIS_END_SWITCH_0_PIN A2
     #define Y_AXIS_END_SWITCH_1_PIN A3
 
     // Toolhead:
-    #define SERVO_PIN 13
+    #define SERVO_PIN 12
     #define SERVO_UP_POSITION 10
     #define SERVO_DOWN_POSITION 0
+    #define SERVO_CHANGE_TOOL_POSITION 70
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO/MICROSTEPPING)

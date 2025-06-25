@@ -16,9 +16,7 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
 
 
 // initialzize varables
-bool status_led_top = false;
-bool status_led_mid = false;
-bool status_led_bot = false;
+byte leds = 0;
 bool manual_mode = false;
 bool expert_mode = false;
 int position[2];
@@ -55,7 +53,6 @@ void setup() {
         
         // Toolhead Pins:
         pinMode(SERVO_PIN, OUTPUT);
-        pinMode(STATUS_LED_TOP_PIN, OUTPUT);
 
         // Servo Setup:
         toolhead_servo.attach(SERVO_PIN);
@@ -104,29 +101,11 @@ void setup() {
         stepper_b.setAcceleration(ACCELERATION);
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(100);
-  //status_led_top = true;
-  //digitalWrite(STATUS_LED_TOP_PIN, HIGH);
-
-  //Serial.println(SOFTWARE_VERSION);
-  //String reply = Serial.readString();
-
-  /*if(connection_error) {
-  // the connecting process returned an error, the device has to be rebooted:
-    while(true){
-      status_led_top = !status_led_top;
-      digitalWrite(STATUS_LED_TOP_PIN, status_led_top);
-      delay(500);
-    }
-    
-  }*/
 }
 
 void loop() {
-  digitalWrite(STATUS_LED_TOP_PIN, HIGH);
-  while (!Serial.available()) // wait for data available
-  digitalWrite(STATUS_LED_TOP_PIN, LOW);
+  while (!Serial.available()) {} // wait for data available
   String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
-  command.trim();
   Serial.print("LOG:Command: ");
   Serial.println(command);
   if(command.startsWith(GO_TO)){
@@ -167,14 +146,22 @@ void loop() {
     engage_toolhead();
     Serial.println(0);
   }
+  else if (command.startsWith(CHANGE_TOOL)) {
+    chage_tool();
+    Serial.println(0);
+  }
+  else {
+  Serial.println("WARNING:Unkown command");
+  Serial.println(5);
+  }
 }
 
 int move(float direction, int micrometers) {
   Serial.println("DEBUG:Starting to move ...");
   // direction in radians
   int steps[2];
-  long delta_x = (long)(sin(direction)*micrometers);
-  long delta_y = (long)(cos(direction)*micrometers);
+  long delta_x = (long)(cos(direction)*micrometers);
+  long delta_y = (long)(sin(direction)*micrometers);
   if(TOGGLE_X_Y_AXIS){
     int new_delta_x = delta_y;
     delta_y = delta_x;
@@ -229,22 +216,16 @@ int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool
       digitalWrite(MOTOR_B_DIR_PIN, LOW);    
     }
   }
-  while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
+  steps[0] = abs(steps[0]);
+  steps[1] = abs(steps[1]);
+  while(pos_a < steps[0] || pos_b < steps[1]) {
     if(pos_a < steps[0]) {
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
       pos_a ++;
     }
-    else if(pos_a > steps[0]) {
-      digitalWrite(MOTOR_A_STEP_PIN, HIGH);
-      pos_a --;
-    }
     if(pos_b < steps[1]) {
       digitalWrite(MOTOR_B_STEP_PIN, HIGH);
       pos_b ++;
-    }
-    else if(pos_b > steps[1]) {
-      digitalWrite(MOTOR_B_STEP_PIN, HIGH);
-      pos_b --;
     }
     if(!ignore_endswitches){
       uint8_t collision = check_collision();
@@ -360,17 +341,41 @@ void homing() {
     move(0.0, sign_x*10000);
   }
   for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
-    move(HALF_PI, sign_y10000);
+    move(HALF_PI, sign_y*10000);
   }
 }
 
+
 // Toolhead:
+
 void engage_toolhead(){
   toolhead_servo.write(SERVO_DOWN_POSITION);
 }
 
 void disengage_toolhead(){
   toolhead_servo.write(SERVO_UP_POSITION);
+}
+
+void chage_tool(){
+  toolhead_servo.write(SERVO_CHANGE_TOOL_POSITION);
+}
+
+
+// LEDs:
+void turn_on_LED(uint8_t led){
+  bitSet(leds, led); // set the bit for given led to 1
+  update_bitshift_register();
+}
+
+void turn_off_led(uint8_t led){
+  bitClear(leds, led); // sed bit for given led to 0
+  update_bitshift_register();
+}
+
+void update_bitshift_register(){
+  digitalWrite(RCLK, LOW); // disconnect input and output registers
+  shiftOut(SER, SRCLK, LSBFIRST, leds); // write data to input register
+  digitalWrite(RCLK, HIGH); // write data to ouput register
 }
 
 // tests:
@@ -436,10 +441,10 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
     digitalWrite(MOTOR_A_DIR_PIN, HIGH);
   }
   if(steps[1] < 0) {
-    digitalWrite(MOTOR_A_DIR_PIN, HIGH);
+    digitalWrite(MOTOR_B_DIR_PIN, HIGH);
   }
   else {
-    digitalWrite(MOTOR_A_DIR_PIN, LOW);
+    digitalWrite(MOTOR_B_DIR_PIN, LOW);
   }
   // calculate time intervals vor the steppers:
   steps[0] = abs(steps[0]);
@@ -550,10 +555,10 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
     digitalWrite(MOTOR_A_DIR_PIN, HIGH);
   }
   if(steps[1] < 0) {
-    digitalWrite(MOTOR_A_DIR_PIN, HIGH);
+    digitalWrite(MOTOR_B_DIR_PIN, HIGH);
   }
   else {
-    digitalWrite(MOTOR_A_DIR_PIN, LOW);
+    digitalWrite(MOTOR_B_DIR_PIN, LOW);
   }
   if(!(steps[0] && steps[1]) || abs(steps[0]) == abs(steps[1])){
     Serial.println("DEBUG:Using move_steps to move");
