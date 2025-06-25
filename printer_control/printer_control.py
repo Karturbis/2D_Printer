@@ -7,7 +7,10 @@ from time import sleep
 import serial
 
 #consts:
-PORT = "/dev/ttyACM0"
+PORT_1 = "/dev/ttyACM0"
+PORT_2 = "/dev/ttyACM1"
+BAUDRATE = 115200
+SERIAL_TIMEOUT = 20  # in seconds
 LOGDIR = "printer_control/logs"
 PRINTFILEDIR = "printer_control/print_files"
 MAX_MOVE_LENGTH = 20000
@@ -132,7 +135,21 @@ class Interface():
         self.overall_command_number = 0
         self.macro_command_number = 0
         self.macro = ""
-        self.ser = serial.Serial(PORT, baudrate=115200, timeout=20)
+        try:
+            logprint(f"Trying to connect to {PORT_1}")
+            self.ser = serial.Serial(PORT_1, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
+            logprint(f"Connected on {PORT_1}")
+        except serial.serialutil.SerialException:
+            logprint(f"Failed to open {PORT_1}")
+            logprint(f"Trying to connect to {PORT_2}")
+            try:
+                self.ser = serial.Serial(PORT_2, baudrate=BAUDRATE, timeout=SERIAL_TIMEOUT)
+                logprint(f"Connected on {PORT_2}")
+            except serial.serialutil.SerialException:
+                logprint(f"Failed to open {PORT_2}")
+                logprint("Could not connect to the Printer, exiting..")
+                exit(42)
+
 
     def listen(self) -> int:
         while not self.ser.in_waiting:  # wait until traffic comes in:
