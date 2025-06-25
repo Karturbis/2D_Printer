@@ -3,7 +3,6 @@
  */
 
  // include libraries:
-#include <AccelStepper.h>
 #include <TMC2208Stepper.h>
 #include <Servo.h>
 
@@ -25,12 +24,6 @@ bool expert_mode = false;
 // initialize TMC2208 class, use Software Serial Port for communication
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
 TMC2208Stepper driver_b = TMC2208Stepper(MOTOR_B_RX_PIN, MOTOR_B_TX_PIN);
-
-/*
-// initialize Accel steppers:
-AccelStepper stepper_a(AccelStepper::DRIVER, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
-AccelStepper stepper_b(AccelStepper::DRIVER, MOTOR_B_STEP_PIN, MOTOR_B_DIR_PIN);
-*/
 
 // initialize toolhead servo:
 Servo toolhead_servo;
@@ -98,15 +91,6 @@ void setup() {
 
         digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
         digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
-
-        
-        // Accelstepper Setup:
-        /*
-        stepper_a.setMaxSpeed(MAX_SPEED);
-        stepper_b.setMaxSpeed(MAX_SPEED);
-        stepper_a.setAcceleration(ACCELERATION);
-        stepper_b.setAcceleration(ACCELERATION);
-        */
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(100);
 }
@@ -118,6 +102,10 @@ void loop() {
   Serial.print("LOG:Command: ");
   Serial.println(command);
   if(command.startsWith(GO_TO)){
+    if(command.indexOf(".") > 0){ // check if command contains a ".", which hints a float
+      Serial.println("A '.' was found, please use Integers, not floats");
+      Serial.println(6);
+    }
     String x_distance = command.substring(1, command.indexOf(SEPERATOR)); // string until the seperator, ignoring first char
     String y_distance = command.substring(command.indexOf(SEPERATOR)+1); // string until terminator, not include seperator
     Serial.print("DEBUG:X distance: ");
@@ -352,50 +340,6 @@ void disengage_toolhead(){
 void change_tool(){
   toolhead_servo.write(SERVO_CHANGE_TOOL_POSITION);
 }
-
-// tests:
-
-/*
-void test_motor(){
-  while (true) {
-    digitalWrite(MOTOR_A_DIR_PIN, HIGH);
-    digitalWrite(MOTOR_B_DIR_PIN, HIGH);
-    Serial.println("DEBUG:Direction HIGH");
-    for (int i = 0; i < 500; i++) {
-        digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
-        digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
-        delay(1);
-    }
-    digitalWrite(MOTOR_A_DIR_PIN, LOW);
-    digitalWrite(MOTOR_B_DIR_PIN, LOW);
-    Serial.println("DEBUG:Direction LOW");
-    for (int i = 0; i < 500; i++) {
-        digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
-        digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
-        delay(1);
-    }
-  }
-}
-
-int move_steps_accelstepper(int steps[2]) {
-  Serial.println("LOG:Started move_steps_accelstepper");
-  bool done_a = false;
-  bool done_b = false;
-  stepper_a.move(steps[0]);
-  stepper_b.move(steps[1]);
-  uint8_t collision;
-  while (!(done_a && done_b)) {
-    Serial.println("LOOPDEBUG:started while loop");
-    done_a = !stepper_a.run();
-    done_b = !stepper_b.run();
-    collision = check_collision();
-    if(collision) {
-      return collision;
-    }
-  }
-}
-
-*/
 
 int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println("LOG:-------------------------------------------------------");

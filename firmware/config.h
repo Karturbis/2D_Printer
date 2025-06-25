@@ -5,7 +5,7 @@
 
 // general:
 
-#define SOFTWARE_VERSION "0.1"
+#define SOFTWARE_VERSION "0.1.1"
 
 // Connection with the PC:
 
@@ -60,8 +60,7 @@
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
 //    #define STEPS_ALGORITHM move_steps
-//   #define STEPS_ALGORITHM move_steps_accelstepper
-//   #define STEPS_ALGORITHM move_steps_diagonal_micros
+//   #define STEPS_ALGORITHM move_steps_diagonal_micros // not working at the moment (same symptom as move_steps)
    #define STEPS_ALGORITHM move_steps_diagonal_slope
 
     #define ACCELERATION 3000.0 // for use with AccelStepper
