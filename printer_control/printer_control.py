@@ -4,6 +4,7 @@
 from math import pi
 from datetime import datetime
 from time import sleep
+import math
 import serial
 
 #consts:
@@ -26,13 +27,13 @@ def macros(arguments):
     if arguments[0].lower() == "square" or arguments[0].lower() == "s":
         start_macro("square")
         dist = int(arguments[1])
-        move(dist, 0.0)
+        move_angle(dist, 0.0)
         listen()
-        move(dist, pi/2)
+        move_angle(dist, pi/2)
         listen()
-        move(-dist, 0.0)
+        move_angle(-dist, 0.0)
         listen()
-        move(-dist, pi/2)
+        move_angle(-dist, pi/2)
         end_macro()
     elif arguments[0].lower() == "t0":
         start_macro("t0")
@@ -42,22 +43,21 @@ def macros(arguments):
         start_macro("-t0")
         send("g5.7,-20000;")
         end_macro()
-
-def move(dist:int, angle:float):
-    dist = int(dist)
-    angle = float(angle)
-    sign_dist = sign(dist)
-    dist = abs(dist)
-    if dist < MAX_MOVE_LENGTH:
-        command = f"g{angle},{sign_dist * dist};"
     else:
-        floor_div = dist//MAX_MOVE_LENGTH
-        command = f"g{angle},{sign_dist * MAX_MOVE_LENGTH};"
-        for _ in range(floor_div):
-            send(command)
-            listen()
-        command = f"g{angle},{sign_dist * (dist%MAX_MOVE_LENGTH)};"
+        send("Macro not found")
+
+def move_angle(dist:int, angle:float):
+    logprint("Converting polar coordiantes to cartesian coordinates.")
+    delta_x = math.cos(angle)*dist
+    delta_y = math.sin(angle)*dist
+    logprint(f"Real X value: {delta_x}, integer X value: {int(delta_x)}")
+    logprint(f"Real Y value: {delta_y}, integer Y value: {int(delta_y)}")
+    move(int(delta_x), int(delta_y))
+
+def move(x_dist, y_dist):
+    command = f"g{x_dist},{y_dist};"
     send(command)
+
 
 def print_file(filename:str):
     start_macro(f"print({filename})")
@@ -212,14 +212,20 @@ def main():
             logprint(output.strip())
             continue
         elif user_in[0].lower() == "y":
-            move(user_in[1], pi/2)
+            if len(user_in) >2:
+                move(user_in[1], user_in[2])
+            else:
+                move(0, user_in[1])
         elif user_in[0].lower() == "x":
-            move(user_in[1], 0.0)
+            if len(user_in) > 2:
+                move(user_in[1], user_in[2])
+            else:
+                move(user_in[1], 0)
         elif user_in[0].lower() == "a":
             if len(user_in) > 2:
-                move(user_in[2], user_in[1])
+                move_angle(user_in[1], user_in[2])
             else:
-                move(10000, user_in[1])
+                move_angle(user_in[1], 10000)
         elif user_in[0] == "m":
             macros(user_in[1:])
         elif user_in[0].startswith("/"):
@@ -227,7 +233,8 @@ def main():
         elif (user_in[0].startswith("g")
             or user_in[0].startswith("h")
             or user_in[0].startswith("u")
-            or user_in[0].startswith("d")) and user_in[0].endswith(";"):
+            or user_in[0].startswith("d")
+            or user_in[0].startswith("c")) and user_in[0].endswith(";"):
             # give users the possibility, to send complex commands
             command = user_in[0]
             send(command)
