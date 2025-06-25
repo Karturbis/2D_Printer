@@ -10,16 +10,16 @@
 #include "config.h" // include configuration
 
 // Function prototypes:
-int move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
-int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
-int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
+uint8_t move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
+uint8_t move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
+uint8_t move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 
 // initialzize varables
 byte leds = 0;
 bool manual_mode = false;
 bool expert_mode = false;
-int position[2];
+long position[2];
 
 // initialize TMC2208 class, use Software Serial Port for communication
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
@@ -199,7 +199,7 @@ int move(float direction, int micrometers) {
   return error;
 }
 
-int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
+uint8_t move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
   int pos_a = 0;
   int pos_b = 0;
   if(!ignore_direction){
@@ -240,7 +240,7 @@ int move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool
   return 0;
 }
 
-int check_collision() {
+uint8_t check_collision() {
   if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
@@ -273,7 +273,7 @@ int check_collision() {
   return 0;
 }
 
-void _homing_x(int speed_delay) {
+void _homing_x(uint16_t speed_delay) {
   int steps[2];
   // drive to x-axis stop using move:
   Serial.println("LOG:Homing X-Axis ...");
@@ -384,7 +384,7 @@ void test_motor(){
     digitalWrite(MOTOR_A_DIR_PIN, HIGH);
     digitalWrite(MOTOR_B_DIR_PIN, HIGH);
     Serial.println("DEBUG:Direction HIGH");
-    for (int i = 0; i < 500; i++) {
+    for (uint16_t i = 0; i < 500; i++) {
         digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
         digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
         delay(1);
@@ -392,7 +392,7 @@ void test_motor(){
     digitalWrite(MOTOR_A_DIR_PIN, LOW);
     digitalWrite(MOTOR_B_DIR_PIN, LOW);
     Serial.println("DEBUG:Direction LOW");
-    for (int i = 0; i < 500; i++) {
+    for (uint16_t i = 0; i < 500; i++) {
         digitalWrite(MOTOR_A_STEP_PIN, !digitalRead(MOTOR_A_STEP_PIN));
         digitalWrite(MOTOR_B_STEP_PIN, !digitalRead(MOTOR_B_STEP_PIN));
         delay(1);
@@ -401,7 +401,7 @@ void test_motor(){
 
 }
 
-int move_steps_accelstepper(int steps[2]) {
+uint8_t move_steps_accelstepper(int steps[2]) {
   Serial.println("LOG:Started move_steps_accelstepper");
   bool done_a = false;
   bool done_b = false;
@@ -419,20 +419,20 @@ int move_steps_accelstepper(int steps[2]) {
   }
 }
 
-int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+uint8_t move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println("LOG:-------------------------------------------------------");
   Serial.println("LOG:####### move_steps_diagonal_micros starting... ########");
   Serial.println("LOG:-------------------------------------------------------");
   bool motor_a_state = false;
   bool motor_b_state = false;
-  int pos_a = 0;
-  int pos_b = 0;
+  uint32_t pos_a = 0;
+  uint32_t pos_b = 0;
   bool done_a = false;
   bool done_b = false;
   // init counters:
-  unsigned long current_micros;
-  unsigned long previous_micros_a = 0;
-  unsigned long previous_micros_b = 0;
+  uint32_t current_micros;
+  uint32_t previous_micros_a = 0;
+  uint32_t previous_micros_b = 0;
   // set the directions of the steppers:
   if(steps[0] < 0) {
     digitalWrite(MOTOR_A_DIR_PIN, LOW);
@@ -450,8 +450,8 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
   steps[0] = abs(steps[0]);
   steps[1] = abs(steps[1]);
   float ratio;
-  unsigned int interval_a;
-  unsigned int interval_b;
+  uint16_t interval_a;
+  uint16_t interval_b;
   if (steps[0] == steps[1]){
     Serial.println("DEBUG:Steps A == B");
     interval_a = working_speed_delay;
@@ -542,7 +542,7 @@ int move_steps_diagonal_micros(int steps[2], int working_speed_delay = WORKING_S
 
 }
 
-int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+uint8_t move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println("LOG:-------------------------------------------------------");
   Serial.println("LOG:######## move_steps_diagonal_slope starting... ########");
   Serial.println("LOG:-------------------------------------------------------");
@@ -566,7 +566,7 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
     Serial.println(steps[0]);
     Serial.print("DEBUG:steps B are: ");
     Serial.println(steps[1]);
-    return move_steps(steps);
+    return move_steps(steps, WORKING_SPEED_DELAY, false, true); // ignore direction
   }
   steps[0] = abs(steps[0]);
   steps[1] = abs(steps[1]);
@@ -575,8 +575,8 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   uint8_t long_side;
   uint8_t step_pin_short_side;
   uint8_t step_pin_long_side;
-  long steps_short_position = 0;
-  long steps_long_position = 0;
+  uint32_t steps_short_position = 0;
+  uint32_t steps_long_position = 0;
   float slope;
   if(steps[0] < steps[1]){
     Serial.println("DEBUG:Steps: A < B");
@@ -604,7 +604,7 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
   }
   Serial.print("DEBUG:Slope: ");
   Serial.println(slope);
-  long diff;
+  int32_t diff;
   for(Serial.println("DEBUG:started for loop"); steps_long_position <= steps[long_side]; steps_long_position++) {
     digitalWrite(step_pin_long_side, HIGH);
     Serial.print("LOOPDEBUG:Set Motor ");
@@ -620,7 +620,6 @@ int move_steps_diagonal_slope(int steps[2], int working_speed_delay = WORKING_SP
       Serial.print(short_side);
       Serial.println(" HIGH");
     }
-
     delayMicroseconds(HIGH_DELAY);
     digitalWrite(step_pin_short_side, LOW);
     digitalWrite(step_pin_long_side, LOW);
