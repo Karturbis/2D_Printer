@@ -157,6 +157,8 @@ class GuiHandler():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.__running_input = False
+                    self.write_command_history()
+                    return "q" # exit the programm
                 # text input:
                 elif event.type == pygame.TEXTINPUT:
                     user_input += event.text
@@ -227,5 +229,4 @@ if __name__ == "__main__":
         else:
             gui_handler.new_print(text)
             gui_handler.refresh()
-
     pygame.quit()
