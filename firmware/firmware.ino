@@ -497,7 +497,7 @@ void _homing_x(int speed_delay) {
   }
   Serial.println(F("LOG:Finished Homing X-Axis"));
   Serial.println(F("LOG:Backing up on X-Axis ..."));
-  move(10000, 0);
+  move(HOMING_MOVEBACK, 0);
 }
 
 void _homing_y(int speed_delay){
@@ -521,7 +521,7 @@ void _homing_y(int speed_delay){
   }
   Serial.println(F("LOG:Finished Homing Y-Axis"));
   Serial.println(F("LOG:Backing up on Y-Axis ..."));
-  move(0, 10000);
+  move(0, HOMING_MOVEBACK);
   Serial.println(F("LOG:Finished Homing"));
 }
 
@@ -529,20 +529,20 @@ void homing() {
   // make sure toolhead is up:
   Serial.println(F("LOG:Start Homing ..."));
   disengage_toolhead();
-  // homing x two times, fast than slow:
-  _homing_x(WORKING_SPEED_DELAY);
-  _homing_x(HOMING_SPEED_DELAY);
   // homing y two times, fast than slow:
   _homing_y(WORKING_SPEED_DELAY);
   _homing_y(HOMING_SPEED_DELAY);
+  // homing x two times, fast than slow:
+  _homing_x(WORKING_SPEED_DELAY);
+  _homing_x(HOMING_SPEED_DELAY);
   // move to sofware home position:
   uint8_t sign_x = (HOMING_OFFSET_X > 0) - (HOMING_OFFSET_X < 0);
   uint8_t sign_y = (HOMING_OFFSET_Y > 0) - (HOMING_OFFSET_Y < 0);
   for(int offset_x = 0; offset_x < abs(HOMING_OFFSET_X); offset_x ++){
-    move(sign_x*10000, 0);
+    move(sign_x*1000, 0);
   }
   for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
-    move(0, sign_y*10000);
+    move(0, sign_y*1000);
   }
 }
 
