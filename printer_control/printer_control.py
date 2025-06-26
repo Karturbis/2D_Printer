@@ -7,6 +7,8 @@ from time import sleep
 import math
 import serial
 
+from gui_handler import GuiHandler
+
 #consts:
 PORT_1 = "/dev/ttyACM0"
 PORT_2 = "/dev/ttyACM1"
@@ -15,6 +17,8 @@ SERIAL_TIMEOUT = 20  # in seconds
 LOGDIR = "printer_control/logs"
 PRINTFILEDIR = "printer_control/print_files"
 MAX_MOVE_LENGTH = 20000
+
+PROMPT = "input"
 
 ###################
 #### Movement: ####
@@ -97,7 +101,7 @@ class Logging():
 
     def __init__(self):
         self.log_level: int = 1
-        self.log_levels: list = ["LOOPDEBUG", "DEBUG", "LOG", "WARNING", "CRITICAL"]
+        self.log_levels: list = ["", "LOOPDEBUG", "DEBUG", "LOG", "WARNING", "CRITICAL"]
         self.log_name = self.generate_logname()
         with open(f"{LOGDIR}/{self.log_name}", "w", encoding="Utf-8") as f:
             f.write(f"--------------------------------------\nLOG FILE {self.log_name}\n--------------------------------------\n")
@@ -111,6 +115,7 @@ class Logging():
         with open(f"{LOGDIR}/{self.log_name}", "a", encoding="Utf-8") as writer:
             time_now = str(datetime.now())
             writer.writelines(f"LOG({time_now[11:]}): {data}\n")
+        gui_handler.new_print(data)
         print(data)
 
     def get_loglevels(self):
@@ -121,13 +126,14 @@ class Logging():
 
     def get_to_ignore(self):
         return self.log_levels[0:self.log_level]
-    
+
     def set_log_level(self, log_level):
         try:
             log_level = int(log_level)
             self.log_level = log_level
         except TypeError:
             self.log_level = self.log_levels.index(log_level)
+
 
 class Interface():
 
@@ -158,7 +164,7 @@ class Interface():
         while reading:  #read incoming traffic
             ret = self.ser.readline()
             if ret:
-                decoded_ret = ret.decode("ascii").strip("\r\n")
+                decoded_ret = str(ret.decode("unicode-escape").strip("\r\n"))
                 try:
                     decoded_ret = int(decoded_ret)
                     logprint(decoded_ret)
@@ -196,12 +202,20 @@ class Interface():
     def disconnect(self):
         self.ser.close()
 
+#####################
+## user interface: ##
+#####################
 
 def main():
-    command_history = []
+    """takes input from user and executes the
+    corresponding commands"""
+    prompt = f"{PROMPT}$>"
     while True:
-        user_in = input("Enter command: ").split(" ")
-        command_history.append(user_in)
+        user_input_raw = gui_handler.new_input(prompt)
+        if user_input_raw:
+            user_in: list = user_input_raw.strip(" ").split(" ")
+        else:
+            continue
         if user_in[0] == "exit" or user_in[0].lower() == "q":
             logprint("User abort")
             break
@@ -252,11 +266,14 @@ def main():
     disconnect()
     logprint("Quiting the programm")
 
+
 if __name__ == "__main__":
+    # init gui_handler
+    gui_handler = GuiHandler()
     # init logging:
     logging = Logging()
     logprint = logging.logprint
-    # inti interface with Printer:
+    # init interface with Printer:
     interface = Interface()
     listen = interface.listen
     send = interface.send
