@@ -224,125 +224,9 @@ uint8_t move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, 
 
 }
 
-uint8_t check_collision() {
-  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
-    digitalWrite(MOTOR_A_STEP_PIN, LOW);
-    digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println(F("DEBUG:motor a LOW"));
-    Serial.println(F("DEBUG:motor B LOW"));
-    return 1;
-  }
-  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
-    digitalWrite(MOTOR_A_STEP_PIN, LOW);
-    digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println(F("DEBUG:motor a LOW"));
-    Serial.println(F("DEBUG:motor B LOW"));
-    return 2;
-  }
-  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
-    digitalWrite(MOTOR_A_STEP_PIN, LOW);
-    digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println(F("DEBUG:motor a LOW"));
-    Serial.println(F("DEBUG:motor B LOW"));
-    return 3;
-  }
-  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
-    digitalWrite(MOTOR_A_STEP_PIN, LOW);
-    digitalWrite(MOTOR_B_STEP_PIN, LOW);
-    Serial.println(F("DEBUG:motor a LOW"));
-    Serial.println(F("DEBUG:motor B LOW"));
-    return 4;
-  }
-  // no collision:
-  return 0;
-}
-
-void _homing_x(int speed_delay) {
-  int steps[2];
-  // drive to x-axis stop using move:
-  Serial.println(F("LOG:Homing X-Axis ..."));
-  bool stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
-  steps[0] = 1;
-  steps[1] = 1;
-  while(!stop) {
-    move_steps(steps, speed_delay, true);
-    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
-  }
-  Serial.println(F("LOG:Hit the trigger, moving back"));
-  // driving until the switch is not triggered anymore:
-  steps[0] = -1;
-  steps[1] = -1;
-  while (stop) {
-    move_steps(steps, speed_delay, true);
-    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
-  }
-  Serial.println(F("LOG:Finished Homing X-Axis"));
-  Serial.println(F("LOG:Backing up on X-Axis ..."));
-  move(10000, 0);
-}
-
-void _homing_y(int speed_delay){
-  int steps[2];
-  // drive to y-axis stop using move
-  Serial.println(F("LOG:Homing Y-Axis ..."));
-  bool stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
-  steps[0] = -1;
-  steps[1] = 1;
-  while(!stop) {
-    move_steps(steps, speed_delay, true);
-    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
-  }
-  Serial.println(F("LOG:Hit the trigger, moving back"));
-  // driving until the switch is not triggered anymore:
-  steps[0] = 1;
-  steps[1] = -1;
-  while (stop) {
-    move_steps(steps, speed_delay, true);
-    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
-  }
-  Serial.println(F("LOG:Finished Homing Y-Axis"));
-  Serial.println(F("LOG:Backing up on Y-Axis ..."));
-  move(0, 10000);
-  Serial.println(F("LOG:Finished Homing"));
-}
-
-void homing() {
-  // make sure toolhead is up:
-  Serial.println(F("LOG:Start Homing ..."));
-  disengage_toolhead();
-  // homing x two times, fast than slow:
-  _homing_x(WORKING_SPEED_DELAY);
-  _homing_x(HOMING_SPEED_DELAY);
-  // homing y two times, fast than slow:
-  _homing_y(WORKING_SPEED_DELAY);
-  _homing_y(HOMING_SPEED_DELAY);
-  // move to sofware home position:
-  uint8_t sign_x = (HOMING_OFFSET_X > 0) - (HOMING_OFFSET_X < 0);
-  uint8_t sign_y = (HOMING_OFFSET_Y > 0) - (HOMING_OFFSET_Y < 0);
-  for(int offset_x = 0; offset_x < abs(HOMING_OFFSET_X); offset_x ++){
-    move(sign_x*10000, 0);
-  }
-  for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
-    move(0, sign_y*10000);
-  }
-}
-
-// Toolhead:
-void engage_toolhead(){
-  toolhead_servo.write(SERVO_DOWN_POSITION);
-}
-
-void disengage_toolhead(){
-  toolhead_servo.write(SERVO_UP_POSITION);
-}
-
-void change_tool(){
-  toolhead_servo.write(SERVO_CHANGE_TOOL_POSITION);
-}
-
 uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println(F("LOG:-------------------------------------------------------"));
-  Serial.println(F("LOG:####### move_steps_diagonal_micros starting... ########"));
+  Serial.println(F("LOG:####### move_steps_diagonal_time starting... ########"));
   Serial.println(F("LOG:-------------------------------------------------------"));
   int pos_a = 0;
   int pos_b = 0;
@@ -354,10 +238,10 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
   unsigned long previous_micros_b = 0;
   // set the directions of the steppers:
   if(steps[0] < 0) {
-    digitalWrite(MOTOR_A_DIR_PIN, LOW);
+    digitalWrite(MOTOR_A_DIR_PIN, HIGH);
   }
   else {
-    digitalWrite(MOTOR_A_DIR_PIN, HIGH);
+    digitalWrite(MOTOR_A_DIR_PIN, LOW);
   }
   if(steps[1] < 0) {
     digitalWrite(MOTOR_B_DIR_PIN, HIGH);
@@ -559,3 +443,118 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
   return 0;
 }
 
+uint8_t check_collision() {
+  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+    digitalWrite(MOTOR_A_STEP_PIN, LOW);
+    digitalWrite(MOTOR_B_STEP_PIN, LOW);
+    Serial.println(F("DEBUG:motor a LOW"));
+    Serial.println(F("DEBUG:motor B LOW"));
+    return 1;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    digitalWrite(MOTOR_A_STEP_PIN, LOW);
+    digitalWrite(MOTOR_B_STEP_PIN, LOW);
+    Serial.println(F("DEBUG:motor a LOW"));
+    Serial.println(F("DEBUG:motor B LOW"));
+    return 2;
+  }
+  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
+    digitalWrite(MOTOR_A_STEP_PIN, LOW);
+    digitalWrite(MOTOR_B_STEP_PIN, LOW);
+    Serial.println(F("DEBUG:motor a LOW"));
+    Serial.println(F("DEBUG:motor B LOW"));
+    return 3;
+  }
+  if(!digitalRead(X_AXIS_END_SWITCH_1_PIN)){
+    digitalWrite(MOTOR_A_STEP_PIN, LOW);
+    digitalWrite(MOTOR_B_STEP_PIN, LOW);
+    Serial.println(F("DEBUG:motor a LOW"));
+    Serial.println(F("DEBUG:motor B LOW"));
+    return 4;
+  }
+  // no collision:
+  return 0;
+}
+
+void _homing_x(int speed_delay) {
+  int steps[2];
+  // drive to x-axis stop using move:
+  Serial.println(F("LOG:Homing X-Axis ..."));
+  bool stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  steps[0] = 1;
+  steps[1] = 1;
+  while(!stop) {
+    move_steps(steps, speed_delay, true);
+    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  }
+  Serial.println(F("LOG:Hit the trigger, moving back"));
+  // driving until the switch is not triggered anymore:
+  steps[0] = -1;
+  steps[1] = -1;
+  while (stop) {
+    move_steps(steps, speed_delay, true);
+    stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
+  }
+  Serial.println(F("LOG:Finished Homing X-Axis"));
+  Serial.println(F("LOG:Backing up on X-Axis ..."));
+  move(10000, 0);
+}
+
+void _homing_y(int speed_delay){
+  int steps[2];
+  // drive to y-axis stop using move
+  Serial.println(F("LOG:Homing Y-Axis ..."));
+  bool stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  steps[0] = -1;
+  steps[1] = 1;
+  while(!stop) {
+    move_steps(steps, speed_delay, true);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  }
+  Serial.println(F("LOG:Hit the trigger, moving back"));
+  // driving until the switch is not triggered anymore:
+  steps[0] = 1;
+  steps[1] = -1;
+  while (stop) {
+    move_steps(steps, speed_delay, true);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+  }
+  Serial.println(F("LOG:Finished Homing Y-Axis"));
+  Serial.println(F("LOG:Backing up on Y-Axis ..."));
+  move(0, 10000);
+  Serial.println(F("LOG:Finished Homing"));
+}
+
+void homing() {
+  // make sure toolhead is up:
+  Serial.println(F("LOG:Start Homing ..."));
+  disengage_toolhead();
+  // homing x two times, fast than slow:
+  _homing_x(WORKING_SPEED_DELAY);
+  _homing_x(HOMING_SPEED_DELAY);
+  // homing y two times, fast than slow:
+  _homing_y(WORKING_SPEED_DELAY);
+  _homing_y(HOMING_SPEED_DELAY);
+  // move to sofware home position:
+  uint8_t sign_x = (HOMING_OFFSET_X > 0) - (HOMING_OFFSET_X < 0);
+  uint8_t sign_y = (HOMING_OFFSET_Y > 0) - (HOMING_OFFSET_Y < 0);
+  for(int offset_x = 0; offset_x < abs(HOMING_OFFSET_X); offset_x ++){
+    move(sign_x*10000, 0);
+  }
+  for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
+    move(0, sign_y*10000);
+  }
+}
+
+// Toolhead:
+void engage_toolhead(){
+  toolhead_servo.write(SERVO_DOWN_POSITION);
+}
+
+void disengage_toolhead(){
+  toolhead_servo.write(SERVO_UP_POSITION);
+}
+
+void change_tool(){
+  toolhead_servo.write(SERVO_CHANGE_TOOL_POSITION);
+}
