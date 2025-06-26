@@ -97,7 +97,7 @@ void loop() {
   Serial.println(command);
   if(command.startsWith(GO_TO)){
     if(command.indexOf(".") > 0){ // check if command contains a ".", which hints a float
-      Serial.println(F("A '.' was found, please use Integers, not floats"));
+      Serial.println(F("A '.' was found, please use Integers, not Floats"));
       Serial.println(6);
     }
     int x_distance = command.substring(1, command.indexOf(SEPERATOR)).toInt(); // string until the seperator, ignoring first char
