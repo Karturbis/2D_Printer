@@ -64,7 +64,7 @@
     // for x axis: WORKING_SPEED_DELAY >= 134
     // for y axis: WORKING_SPEED_DELAY >= 155
     // use WORKING_SPEED_DELAY >= 170 for safety
-    #define WORKING_SPEED_DELAY 250
+    #define WORKING_SPEED_DELAY 300
     #define HOMING_SPEED_DELAY 1200
     // homing offsets in 10 000 micrometer
     #define HOMING_OFFSET_X 0
