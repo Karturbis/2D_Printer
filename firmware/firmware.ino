@@ -444,7 +444,7 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
 }
 
 uint8_t check_collision() {
-  if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
+  if(!digitalRead(Y_AXIS_END_SWITCH_0_PIN)){
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
     Serial.println(F("DEBUG:motor a LOW"));

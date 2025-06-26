@@ -5,7 +5,7 @@
 
 // general:
 
-#define SOFTWARE_VERSION "0.1.2"
+#define SOFTWARE_VERSION "0.1.3"
 
 // Connection with the PC:
 
