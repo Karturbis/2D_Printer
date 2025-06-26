@@ -223,9 +223,9 @@ def main():
                 move(user_in[1], 0)
         elif user_in[0].lower() == "a":
             if len(user_in) > 2:
-                move_angle(user_in[1], user_in[2])
+                move_angle(int(user_in[2]), float(user_in[1]))
             else:
-                move_angle(user_in[1], 10000)
+                move_angle(10000, float(user_in[1]))
         elif user_in[0] == "m":
             macros(user_in[1:])
         elif user_in[0].startswith("/"):
