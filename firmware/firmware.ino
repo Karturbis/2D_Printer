@@ -14,11 +14,7 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
 uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 // initialzize varables
-bool status_led_top = false;
-bool status_led_mid = false;
-bool status_led_bot = false;
-bool manual_mode = false;
-bool expert_mode = false;
+byte leds = 10111;
 
 // initialize TMC2208 class, use Software Serial Port for communication
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
@@ -28,70 +24,69 @@ TMC2208Stepper driver_b = TMC2208Stepper(MOTOR_B_RX_PIN, MOTOR_B_TX_PIN);
 Servo toolhead_servo;
 
 void setup() {
-    // Setup Pins:
-        /*
-        // Led Pins:
-        pinMode(TRX_LED_PIN, OUTPUT);
-        pinMode(STATUS_LED_TOP_PIN, OUTPUT);
-        pinMode(STATUS_LED_MID_PIN, OUTPUT);
-        pinMode(STATUS_LED_BOT_PIN, OUTPUT);
+  // Setup Pins:
 
-        // Button Pins:
-        pinMode(HOMING_BUTTON_PIN, INPUT);
-        pinMode(WORKLIGHT_BUTTON_PIN, INPUT);
-        */
-        // Axis Endswitch Pins:
-        pinMode(X_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
-        pinMode(X_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
-        pinMode(Y_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
-        pinMode(Y_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
-        
-        // Toolhead Pins:
-        pinMode(SERVO_PIN, OUTPUT);
-        pinMode(STATUS_LED_TOP_PIN, OUTPUT);
+    // bitshift register:
+    pinMode(SER, OUTPUT);
+    pinMode(SRCLK, OUTPUT);
+    pinMode(RCLK, OUTPUT);
 
-        // Servo Setup:
-        toolhead_servo.attach(SERVO_PIN);
-        toolhead_servo.write(20);
-        delay(500);
-        toolhead_servo.write((SERVO_UP_POSITION));
+    // Axis Endswitch Pins:
+    pinMode(X_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
+    pinMode(X_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
+    pinMode(Y_AXIS_END_SWITCH_0_PIN, INPUT_PULLUP);
+    pinMode(Y_AXIS_END_SWITCH_1_PIN, INPUT_PULLUP);
 
-        // Motor Setup:
-        // init motor pins:
-        pinMode(MOTOR_A_EN_PIN, OUTPUT);
-        pinMode(MOTOR_B_EN_PIN, OUTPUT);
-        pinMode(MOTOR_A_STEP_PIN, OUTPUT);
-        pinMode(MOTOR_B_STEP_PIN, OUTPUT);
-        pinMode(MOTOR_A_DIR_PIN, OUTPUT);
-        pinMode(MOTOR_B_DIR_PIN, OUTPUT);
-        // disable drivers in hardware:
-        digitalWrite(MOTOR_A_EN_PIN, HIGH);
-        digitalWrite(MOTOR_B_EN_PIN, HIGH);
-        // initialize the Serial connection to the drivers:
-        driver_a.beginSerial(STEPPER_BAUD_RATE);
-        driver_b.beginSerial(STEPPER_BAUD_RATE);
-        // reset driver registers:
-        driver_a.push();
-        driver_b.push();
+    // Servo:
+    pinMode(SERVO_PIN, OUTPUT);
 
-        // UART Setup:
-        driver_a.pdn_disable(true);     // Use PDN/UART pin for communication
-        driver_b.pdn_disable(true);     // Use PDN/UART pin for communication
-        driver_a.I_scale_analog(false); // Use internal voltage reference
-        driver_b.I_scale_analog(false); // Use internal voltage reference
-        driver_a.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
-        driver_b.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
-        driver_a.pwm_autoscale(1);
-        driver_b.pwm_autoscale(1);
-        driver_a.microsteps(MICROSTEPPING);     // set microstepping driver a
-        driver_b.microsteps(MICROSTEPPING);     // set microstepping driver b
-        driver_a.toff(2);               // Enable driver in software
-        driver_b.toff(2);               // Enable driver in software
+    // Motors:
+    pinMode(MOTOR_A_EN_PIN, OUTPUT);
+    pinMode(MOTOR_B_EN_PIN, OUTPUT);
+    pinMode(MOTOR_A_STEP_PIN, OUTPUT);
+    pinMode(MOTOR_B_STEP_PIN, OUTPUT);
+    pinMode(MOTOR_A_DIR_PIN, OUTPUT);
+    pinMode(MOTOR_B_DIR_PIN, OUTPUT);
 
-        digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
-        digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
-  Serial.begin(BAUD_RATE);
-  Serial.setTimeout(100);
+  // Motor Setup:
+
+    // disable drivers in hardware:
+    digitalWrite(MOTOR_A_EN_PIN, HIGH);
+    digitalWrite(MOTOR_B_EN_PIN, HIGH);
+    // initialize the Serial connection to the drivers:
+    driver_a.beginSerial(STEPPER_BAUD_RATE);
+    driver_b.beginSerial(STEPPER_BAUD_RATE);
+    // reset driver registers:
+    driver_a.push();
+    driver_b.push();
+    // UART Setup:
+    driver_a.pdn_disable(true);     // Use PDN/UART pin for communication
+    driver_b.pdn_disable(true);     // Use PDN/UART pin for communication
+    driver_a.I_scale_analog(false); // Use internal voltage reference
+    driver_b.I_scale_analog(false); // Use internal voltage reference
+    driver_a.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
+    driver_b.rms_current(MAX_MOTOR_CURRENT);      // Set driver current in mA
+    driver_a.pwm_autoscale(1);
+    driver_b.pwm_autoscale(1);
+    driver_a.microsteps(MICROSTEPPING);     // set microstepping driver a
+    driver_b.microsteps(MICROSTEPPING);     // set microstepping driver b
+    driver_a.toff(2);               // Enable driver in software
+    driver_b.toff(2);               // Enable driver in software
+    digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
+    digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
+
+  // connection with computer:
+    Serial.begin(BAUD_RATE);
+    Serial.setTimeout(100);
+
+  // Servo Setup:
+    toolhead_servo.attach(SERVO_PIN);
+    toolhead_servo.write(SERVO_TEST_POSITION);
+    delay(500);
+    toolhead_servo.write((SERVO_UP_POSITION));
+  
+  // LEDs:
+    update_bitshift_register();
 }
 
 void loop() {
@@ -546,7 +541,9 @@ void homing() {
   }
 }
 
+
 // Toolhead:
+
 void engage_toolhead(){
   toolhead_servo.write(SERVO_DOWN_POSITION);
 }
@@ -557,4 +554,23 @@ void disengage_toolhead(){
 
 void change_tool(){
   toolhead_servo.write(SERVO_CHANGE_TOOL_POSITION);
+}
+
+
+// LEDs:
+
+void enable_led(uint8_t led){
+  bitSet(leds, led);
+  update_bitshift_register();
+}
+
+void disable_led(uint8_t led){
+  bitClear(leds, led);
+  update_bitshift_register();
+}
+
+void update_bitshift_register(){
+  digitalWrite(RCLK, LOW);  // disconnect input and output registers
+  shiftOut(SER, SRCLK, MSBFIRST, leds);  // write LED data to input register
+  digitalWrite(RCLK, HIGH);  // connect input and output registers, to update the LEDs
 }

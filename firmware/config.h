@@ -23,19 +23,13 @@
 
 // Hardware Configuration:
 
-    //// Led Pins:
-    //#define TRX_LED_PIN 1
-    #define STATUS_LED_TOP_PIN A5
-    //#define STATUS_LED_MID_PIN 3
-    //#define STATUS_LED_BOT_PIN 4
-    /*
-        LEDs:
-        TX = Qa
-        RX = Qb
-        Status top = Qc
-        Status mid = Qd
-        Satus bot = Qe
-    */
+    // Led Pins (Bitshift register):
+    #define TX = 0
+    #define RX = 1
+    #define Status top = 2
+    #define Status mid = 3
+    #define Satus bot = 4
+
     // Bitshift register Pins;
     #define SER 13
     #define SRCLK A4
@@ -89,6 +83,7 @@
     #define SERVO_UP_POSITION 10
     #define SERVO_DOWN_POSITION 0
     #define SERVO_CHANGE_TOOL_POSITION 80
+    #define SERVO_TEST_POSITION 20
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO/MICROSTEPPING)
