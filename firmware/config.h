@@ -75,7 +75,7 @@
     // homing offsets in 10 000 micrometer
     #define HOMING_OFFSET_X 0
     #define HOMING_OFFSET_Y 0
-    #define HOMING_MOVEBACK 1000
+    #define HOMING_MOVEBACK 500
     #define HIGH_DELAY 10
 
     // Axis-Endswitches:
