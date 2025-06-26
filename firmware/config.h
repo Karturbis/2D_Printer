@@ -56,7 +56,7 @@
     //other:
     #define MAX_MOTOR_CURRENT 400 // milli Ampere
     #define STEPPER_BAUD_RATE 115200
-    #define FULLSTEP_TO_MICROMETER_RATIO 0.05
+    #define FULLSTEP_TO_MICROMETER_RATIO 0.48
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
 //    #define STEPS_ALGORITHM move_steps
@@ -91,4 +91,3 @@
 
     // calculated values:
     #define STEP_TO_MICROMETER_RATIO (FULLSTEP_TO_MICROMETER_RATIO/MICROSTEPPING)
-    #define INVERSE_STEP_TO_MICROMETER_RATIO (1*STEP_TO_MICROMETER_RATIO)
