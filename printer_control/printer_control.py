@@ -8,9 +8,6 @@ import math
 from os import listdir
 import serial
 
-
-from gui_handler import GuiHandler
-
 #consts:
 PORT_1 = "/dev/ttyACM0"
 PORT_2 = "/dev/ttyACM1"
@@ -118,7 +115,6 @@ class Logging():
         with open(f"{LOGDIR}/{self.log_name}", "a", encoding="Utf-8") as writer:
             time_now = str(datetime.now())
             writer.writelines(f"LOG({time_now[11:]}): {data}\n")
-        gui_handler.new_print(data)
         print(data)
 
     def get_loglevels(self):
@@ -209,16 +205,10 @@ class Interface():
 ## user interface: ##
 #####################
 
+
 def main():
-    """takes input from user and executes the
-    corresponding commands"""
-    prompt = f"{PROMPT}$>"
     while True:
-        user_input_raw = gui_handler.new_input(prompt)
-        if user_input_raw:
-            user_in: list = user_input_raw.strip(" ").split(" ")
-        else:
-            continue
+        user_in = input("Enter command: ").split(" ")
         if user_in[0] == "exit" or user_in[0].lower() == "q":
             logprint("User abort")
             break
@@ -230,7 +220,7 @@ def main():
             continue
         elif user_in[0].lower() == "y":
             if len(user_in) >2:
-                move(user_in[1], user_in[2])
+                move(user_in[2], user_in[1])
             else:
                 move(0, user_in[1])
         elif user_in[0].lower() == "x":
@@ -240,8 +230,10 @@ def main():
                 move(user_in[1], 0)
         elif user_in[0].lower() == "a":
             if len(user_in) > 2:
+                move_angle(user_in[1], user_in[2])
                 move_angle(int(user_in[2]), float(user_in[1]))
             else:
+                move_angle(user_in[1], 10000)
                 move_angle(10000, float(user_in[1]))
         elif user_in[0] == "m":
             macros(user_in[1:])
@@ -269,10 +261,7 @@ def main():
     disconnect()
     logprint("Quiting the programm")
 
-
 if __name__ == "__main__":
-    # init gui_handler
-    gui_handler = GuiHandler()
     # init logging:
     logging = Logging()
     logprint = logging.logprint
