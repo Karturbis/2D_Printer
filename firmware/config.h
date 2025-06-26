@@ -5,7 +5,7 @@
 
 // general:
 
-#define SOFTWARE_VERSION "0.1.1"
+#define SOFTWARE_VERSION "0.1.2"
 
 // Connection with the PC:
 
@@ -60,8 +60,8 @@
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
 //    #define STEPS_ALGORITHM move_steps
-//   #define STEPS_ALGORITHM move_steps_diagonal_micros // not working at the moment (same symptom as move_steps)
-   #define STEPS_ALGORITHM move_steps_diagonal_slope
+//   #define STEPS_ALGORITHM move_steps_linear_interpolation_time // not working at the moment (same symptom as move_steps)
+   #define STEPS_ALGORITHM move_steps_linear_interpolation_slope
 
     #define ACCELERATION 3000.0 // for use with AccelStepper
     #define MAX_SPEED 14000     // for use with AccelStepper
@@ -70,12 +70,12 @@
     // for x axis: WORKING_SPEED_DELAY >= 134
     // for y axis: WORKING_SPEED_DELAY >= 155
     // use WORKING_SPEED_DELAY >= 170 for safety
-    #define WORKING_SPEED_DELAY 170
+    #define WORKING_SPEED_DELAY 250
     #define HOMING_SPEED_DELAY 1200
     // homing offsets in 10 000 micrometer
     #define HOMING_OFFSET_X 0
     #define HOMING_OFFSET_Y 0
-    #define HIGH_DELAY 1
+    #define HIGH_DELAY 10
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A0
