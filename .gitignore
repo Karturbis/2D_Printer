@@ -7,3 +7,6 @@ test*
 
 # ignore print files:
 printer_control/print_files/*
+
+#ignore python cache:
+printer_control/__pycache__
