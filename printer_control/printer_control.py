@@ -5,7 +5,9 @@ from math import pi
 from datetime import datetime
 from time import sleep
 import math
+from os import listdir
 import serial
+
 
 from gui_handler import GuiHandler
 
@@ -16,6 +18,7 @@ BAUDRATE = 115200
 SERIAL_TIMEOUT = 20  # in seconds
 LOGDIR = "printer_control/logs"
 PRINTFILEDIR = "printer_control/print_files"
+MACRODIR = "printer_control/macros"
 MAX_MOVE_LENGTH = 20000
 
 PROMPT = "input"
@@ -28,24 +31,25 @@ def sign(number: int):
     return (number  > 0) - (number < 0)
 
 def macros(arguments):
-    if arguments[0].lower() == "square" or arguments[0].lower() == "s":
-        start_macro("square")
-        dist = int(arguments[1])
-        move_angle(dist, 0.0)
-        listen()
-        move_angle(dist, pi/2)
-        listen()
-        move_angle(-dist, 0.0)
-        listen()
-        move_angle(-dist, pi/2)
-        end_macro()
-    elif arguments[0].lower() == "t0":
-        start_macro("t0")
-        send("g5.7,20000;")
-        end_macro()
-    elif arguments[0].lower() == "-t0":
-        start_macro("-t0")
-        send("g5.7,-20000;")
+    macro_files: list = listdir(MACRODIR)
+    arguments[0] = arguments[0].lower()
+
+    if arguments[0] in macro_files:
+        start_macro(arguments[0])
+        with open(f"{MACRODIR}/{arguments[0]}", "r", encoding="Utf-8") as macro_reader:
+            commands: list = macro_reader.readlines()
+            if len(arguments) > 1:
+                for i, command in enumerate(commands):
+                    commands[i] = command.replace("arg0e", arguments[1])
+            if len(arguments) > 2:
+                for i, command in enumerate(commands):
+                    commands[i] = command.replace("arg1e", arguments[2])
+            if len(arguments) > 3:
+                for i, command in enumerate(commands):
+                    commands[i] = command.replace("arg2e", arguments[3])
+            for command in commands:
+                send(command)
+                listen()
         end_macro()
     else:
         send("Macro not found")
@@ -61,7 +65,6 @@ def move_angle(dist:int, angle:float):
 def move(x_dist, y_dist):
     command = f"g{x_dist},{y_dist};"
     send(command)
-
 
 def print_file(filename:str):
     start_macro(f"print({filename})")
