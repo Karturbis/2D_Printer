@@ -149,7 +149,7 @@ void loop() {
 
 uint8_t move(int x_distance, int y_distance) {
   Serial.println(F("DEBUG:Starting to move ..."));
-  uint16_t steps[2];
+  int steps[2];
   steps[0] = (-x_distance + y_distance)*STEP_TO_MICROMETER_RATIO;
   steps[1] = (-x_distance - y_distance)*STEP_TO_MICROMETER_RATIO;
   Serial.println(F("LOG:-----------------------------------"));

@@ -1,7 +1,7 @@
 """program to easaly send commands to the 2D_Printer"""
 
 #imports:
-from math import pi
+import math
 from datetime import datetime
 from time import sleep
 import math
@@ -73,6 +73,12 @@ def print_file(filename:str):
         logprint(f"ERROR:Could not open the file: {e}")
         return
     print("finished opening")
+    if lines[0].find(".") > 0 or lines[1].find(".") > 0:
+        logprint("File uses polar coordinates")
+        logprint("Coinevrting to cartesian coordinates")
+        for i, line in enumerate(lines):
+            lines[i] = polar_to_cartesian(line)
+        logprint("Finished converting the coordinates")
     logprint("#############################")
     sleep(0.5)
     logprint("##### Starting Print ... ####")
@@ -93,6 +99,19 @@ def print_file(filename:str):
     logprint("#############################")
     end_macro()
 
+def polar_to_cartesian(command:str) -> str:
+    if not command.startswith("g"):
+        return command
+    # else:
+    command = command.strip("\n")
+    print(command)
+    angle = float(command[1:command.index(",")])
+    distance = int(command[command.index(",") +1: -1])
+    delta_x = int(math.cos(angle)*distance/10)
+    delta_y = int(math.sin(angle)*distance/10)
+    new_command = f"g{delta_x},{delta_y};"
+    return new_command
+
 ###################
 #### Logging: #####
 ###################
@@ -101,7 +120,7 @@ class Logging():
 
     def __init__(self):
         self.log_level: int = 1
-        self.log_levels: list = ["", "LOOPDEBUG", "DEBUG", "LOG", "WARNING", "CRITICAL"]
+        self.log_levels: list = ["", "DEBUG", "LOG", "WARNING", "CRITICAL"]
         self.log_name = self.generate_logname()
         with open(f"{LOGDIR}/{self.log_name}", "w", encoding="Utf-8") as f:
             f.write(f"--------------------------------------\nLOG FILE {self.log_name}\n--------------------------------------\n")
@@ -170,7 +189,7 @@ class Interface():
                     return decoded_ret
                 except ValueError:
                     pass
-                if not decoded_ret.startswith(tuple(logging.get_to_ignore())):
+                if not decoded_ret.startswith("LOOPDEBUG"):
                     logprint(decoded_ret)
             else:
                 return 0
@@ -181,6 +200,7 @@ class Interface():
             logprint(f"Macro: {self.macro}, macro command number: {self.macro_command_number},")
             self.macro_command_number += 1
         self.overall_command_number += 1
+        #command = command.replace("9","N")
         logprint(f"which is: {command}")
         command = f"{command}\n".encode("ascii")
         self.ser.write(command)
@@ -237,6 +257,7 @@ def main():
                 move_angle(10000, float(user_in[1]))
         elif user_in[0] == "m":
             macros(user_in[1:])
+            continue
         elif user_in[0].startswith("/"):
             logprint("first exit the program...")
         elif (user_in[0].startswith("g")
