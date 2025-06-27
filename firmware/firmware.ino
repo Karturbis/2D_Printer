@@ -92,7 +92,7 @@ void setup() {
 void loop() {
   while (!Serial.available()) {}// wait for data available
   String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
-  command.trim();
+  command.replace("N", "9");
   Serial.print(F("LOG:Command: "));
   Serial.println(command);
   if(command.startsWith(GO_TO)){
@@ -261,13 +261,13 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
         Serial.println(F("DEBUG:A has more steps than b"));
         ratio = steps[0]/steps[1];
         interval_a = working_speed_delay;
-        interval_b = (int)(ratio*working_speed_delay) >> 1;  // divide by two, to compensate raising edge every two iterations
+        interval_b = (int)(ratio*working_speed_delay);  // divide by two, to compensate raising edge every two iterations
       }
       else {
         Serial.println(F("DEBUG:B has more steps than A"));
         ratio = steps[1]/steps[0];
         interval_b = working_speed_delay;
-        interval_a = (int)(ratio*working_speed_delay) >> 1;  // divide by two, to compensate raising edge every two iterations
+        interval_a = (int)(ratio*working_speed_delay);  // divide by two, to compensate raising edge every two iterations
       }
       Serial.print(F("DEBUG:Ratio: "));
       Serial.println(ratio);
@@ -300,29 +300,17 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
     if((current_micros - previous_micros_a >= interval_a) && !done_a) {
       previous_micros_a = current_micros;
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
-      Serial.println(F("LOOPDEBUG:Setting motor A HIGH"));
       pos_a ++;
-      Serial.print(F("LOOPDEBUG:Overall steps to go A: "));
-      Serial.println(steps[0]);
-      Serial.print(F("LOOPDEBUG:Steps gone A: "));
-      Serial.println(pos_a);
       if(pos_a > steps[0]){
         done_a = true;
-        Serial.println(F("LOOPDEBUG:A is done"));
       }
     }
     if((current_micros - previous_micros_b >= interval_b) && !done_b) {
       previous_micros_b = current_micros;
       digitalWrite(MOTOR_B_STEP_PIN, HIGH);
-      Serial.print(F("LOOPDEBUG:Setting motor B HIGH"));
       pos_b ++;
-      Serial.print(F("LOOPDEBUG:Overall steps to go B: "));
-      Serial.println(steps[1]);
-      Serial.print(F("LOOPDEBUG:Steps gone B: "));
-      Serial.println(pos_b);
       if(pos_b > steps[1]){
         done_b = true;
-        Serial.println(F("LOOPDEBUG:B is done"));
       }
     }
     if(!ignore_endswitches){
@@ -337,7 +325,6 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
     Serial.println(F("DEBUG:motor a LOW"));
     Serial.println(F("DEBUG:motor B LOW"));
   return 0;
-
 }
 
 uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
@@ -405,24 +392,15 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
   long diff;
   for(Serial.println(F("DEBUG:started for loop")); steps_long_position <= steps[long_side]; steps_long_position++) {
     digitalWrite(step_pin_long_side, HIGH);
-    Serial.print(F("LOOPDEBUG:Set Motor "));
-    Serial.print(long_side);
-    Serial.println(F(" HIGH"));
     diff = round(steps_long_position * slope - steps_short_position);
-    Serial.print(F("LOOPDEBUG:diff == "));
-    Serial.println(diff);
     if(diff >= 1){ // check difference between calculated and actual position
       digitalWrite(step_pin_short_side, HIGH);
       steps_short_position ++;
-      Serial.print(F("LOOPDEBUG:Set Motor "));
-      Serial.print(short_side);
-      Serial.println(F(" HIGH"));
     }
 
     delayMicroseconds(HIGH_DELAY);
     digitalWrite(step_pin_short_side, LOW);
     digitalWrite(step_pin_long_side, LOW);
-    Serial.println(F("LOOPDEBUG:Setting both motors LOW"));
     delayMicroseconds(working_speed_delay);
     if(!ignore_endswitches){
       uint8_t collision = check_collision();

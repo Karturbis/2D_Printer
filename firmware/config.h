@@ -19,6 +19,8 @@
 #define DISENGAGE_TOOLHEAD "u"  
 #define ENGAGE_TOOLHEAD "d"
 #define CHANGE_TOOL "c"
+// goofy shit:
+#define NINECHARACTER "N"
 
 
 // Hardware Configuration:
@@ -53,13 +55,10 @@
     #define FULLSTEP_TO_MICROMETER_RATIO 0.48
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
-//    #define STEPS_ALGORITHM move_steps
+    #define STEPS_ALGORITHM move_steps
 //   #define STEPS_ALGORITHM move_steps_linear_interpolation_time // not working at the moment (same symptom as move_steps)
-   #define STEPS_ALGORITHM move_steps_linear_interpolation_slope
+//   #define STEPS_ALGORITHM move_steps_linear_interpolation_slope
 
-    #define ACCELERATION 3000.0 // for use with AccelStepper
-    #define MAX_SPEED 14000     // for use with AccelStepper
-    #define WORKING_SPEED 14000  // for use with AccelStepper
     // for use with own implementation:
     // for x axis: WORKING_SPEED_DELAY >= 134
     // for y axis: WORKING_SPEED_DELAY >= 155
