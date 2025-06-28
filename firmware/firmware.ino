@@ -14,7 +14,7 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
 uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 // initialzize varables
-byte leds = 10111;
+byte leds = 11100111;
 
 // initialize TMC2208 class, use Software Serial Port for communication
 TMC2208Stepper driver_a = TMC2208Stepper(MOTOR_A_RX_PIN, MOTOR_A_TX_PIN);
@@ -72,8 +72,10 @@ void setup() {
     driver_b.microsteps(MICROSTEPPING);     // set microstepping driver b
     driver_a.toff(2);               // Enable driver in software
     driver_b.toff(2);               // Enable driver in software
-    digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
-    digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
+    if(!DISABLE_MOTORS){
+      digitalWrite(MOTOR_A_EN_PIN, LOW);    // Enable driver in hardware
+      digitalWrite(MOTOR_B_EN_PIN, LOW);    // Enable driver in hardware
+    }
 
   // connection with computer:
     Serial.begin(BAUD_RATE);
@@ -92,9 +94,11 @@ void setup() {
 void loop() {
   while (!Serial.available()) {}// wait for data available
   String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
-  command.replace("N", "9");
+  command.trim();
+  command.replace(NINECHARACTER, "9");
   Serial.print(F("LOG:Command: "));
   Serial.println(command);
+  Serial.println(F("DEBUG: command was sent back"));
   if(command.startsWith(GO_TO)){
     if(command.indexOf(".") > 0){ // check if command contains a ".", which hints a float
       Serial.println(F("A '.' was found, please use Integers, not Floats"));
@@ -126,8 +130,8 @@ void loop() {
     Serial.println(exit_code);
   }
   else if (command.startsWith(HOMING)) {
-  homing();
-  Serial.println(0);
+    homing();
+    Serial.println(0);
   }
   else if (command.startsWith(DISENGAGE_TOOLHEAD)) {
     disengage_toolhead();
@@ -495,13 +499,12 @@ void _homing_y(int speed_delay){
   Serial.println(F("LOG:Finished Homing Y-Axis"));
   Serial.println(F("LOG:Backing up on Y-Axis ..."));
   move(0, HOMING_MOVEBACK);
-  Serial.println(F("LOG:Finished Homing"));
 }
 
 void homing() {
   // make sure toolhead is up:
   Serial.println(F("LOG:Start Homing ..."));
-  disengage_toolhead();
+  change_tool();
   // homing y two times, fast than slow:
   _homing_y(WORKING_SPEED_DELAY);
   _homing_y(HOMING_SPEED_DELAY);
@@ -517,6 +520,7 @@ void homing() {
   for(int offset_y = 0; offset_y < abs(HOMING_OFFSET_Y); offset_y ++){
     move(0, sign_y*1000);
   }
+  Serial.println(F("LOG:Finished Homing"));
 }
 
 
@@ -549,6 +553,6 @@ void disable_led(uint8_t led){
 
 void update_bitshift_register(){
   digitalWrite(RCLK, LOW);  // disconnect input and output registers
-  shiftOut(SER, SRCLK, MSBFIRST, leds);  // write LED data to input register
+  shiftOut(SER, SRCLK, LSBFIRST, leds);  // write LED data to input register
   digitalWrite(RCLK, HIGH);  // connect input and output registers, to update the LEDs
 }
