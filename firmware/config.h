@@ -11,7 +11,7 @@
 
 #define BAUD_RATE 115200
 //protocol Symbols:
-#define TERMINATOR ";"
+#define TERMINATOR ';'
 #define SEPERATOR ","
 // commands: 
 #define HOMING "h"
@@ -55,9 +55,9 @@
     #define FULLSTEP_TO_MICROMETER_RATIO 0.48
     #define MICROSTEPPING 1
     // function name of the used algorithm for step by step moving:
-    #define STEPS_ALGORITHM move_steps
+//    #define STEPS_ALGORITHM move_steps
 //   #define STEPS_ALGORITHM move_steps_linear_interpolation_time // not working at the moment (same symptom as move_steps)
-//   #define STEPS_ALGORITHM move_steps_linear_interpolation_slope
+   #define STEPS_ALGORITHM move_steps_linear_interpolation_slope
 
     // for use with own implementation:
     // for x axis: WORKING_SPEED_DELAY >= 134
@@ -70,6 +70,8 @@
     #define HOMING_OFFSET_Y 0
     #define HOMING_MOVEBACK 500
     #define HIGH_DELAY 10
+    //debug:
+    #define DISABLE_MOTORS false
 
     // Axis-Endswitches:
     #define X_AXIS_END_SWITCH_0_PIN A0
