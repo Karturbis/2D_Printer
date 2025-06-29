@@ -3,12 +3,12 @@
  */
 
  // include libraries:
-#include <TMC2208Stepper.h>
-#include <Servo.h>
+#include <TMC2208Stepper.h>  // for UART communication with the TMC2208 stepper drivers
+#include <Servo.h>  // for controlling the servo
 
 #include "config.h" // include configuration
 
-// Function prototypes:
+// Function prototypes (needed, to use default arguments in the functions):
 uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
 uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
@@ -81,25 +81,29 @@ void setup() {
     Serial.begin(BAUD_RATE);
     Serial.setTimeout(100);
     Serial.flush(); // make sure the output buffer is empty
-
-  // Servo Setup:
-    toolhead_servo.attach(SERVO_PIN);
-    toolhead_servo.write(SERVO_TEST_POSITION);
-    delay(400);
-    toolhead_servo.write((SERVO_UP_POSITION));
   
   // LEDs:
     update_bitshift_register();
+
+  // Servo Setup:
+    toolhead_servo.attach(SERVO_PIN);
+    // Go to two different positions with the servo to show Setup is done: 
+    toolhead_servo.write(SERVO_TEST_POSITION);
+    delay(400);
+    toolhead_servo.write((SERVO_UP_POSITION));
 }
 
 void loop() {
-  while (!Serial.available()) {}// wait for data available
-  String command = Serial.readString();  //read until terminator character
-  command.trim();
+  /*
+    Sends a 0 back, if everything was ok,
+    if an error occured, the error code is sent
+  */
+  while (!Serial.available()) {} // wait until data is available
+  String command = Serial.readString();  // read the command from the computer
+  command.trim();  // remove unwanted characters from the command
   Serial.print(F("LOG:Command: "));
   Serial.println(command);
-  Serial.println(F("DEBUG: command was sent back"));
-  if(command.startsWith(GO_TO)){
+  if(command.startsWith(GO_TO)){  // a move command was received
     if(command.indexOf(".") > 0){ // check if command contains a ".", which hints a float
       Serial.println(F("A '.' was found, please use Integers, not Floats"));
       Serial.println(6);
@@ -110,7 +114,8 @@ void loop() {
     Serial.println(x_distance);
     Serial.print(F("DEBUG:Y distance: "));
     Serial.println(y_distance);
-    int exit_code = move(x_distance, y_distance); // go to
+    int exit_code = move(x_distance, y_distance); // move the toolhead
+    // make whatever the exitcodes demands:
     if(exit_code == 1){
       Serial.println(F("CRITICAL:Toolhead ran into x-negativ wall, x-axis 0 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
@@ -159,25 +164,19 @@ uint8_t move(int x_distance, int y_distance) {
   Serial.println(F("LOG:-----------------------------------"));
   Serial.println(F("LOG:######## Start moving #############"));
   Serial.println(F("LOG:-----------------------------------"));
-  // Serial.print(F("DEBUG:Delta_X: "));
-  // Serial.println(x_distance);
-  // Serial.print(F("DEBUG:Delta_y: "));
-  // Serial.println(y_distance);
-  // Serial.print(F("DEBUG:Steps[0]: "));
-  // Serial.println(steps[0]);
-  // Serial.print(F("DEBUG:Steps[1]: "));
-  // Serial.println(steps[1]);
-  // move:
+  // move the calculated steps with the step algorithm, that is defined in config.h:
   uint8_t exit_code;
   exit_code = STEPS_ALGORITHM(steps);
-  // Update Position:
   Serial.println(F("Finished moving"));
   return exit_code;
 }
 
 uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
+  // This algorithm works for all directions, where the angle to the x-axis is a miltiple of pi/4.
+  // init positions:
   int_fast64_t pos_a = 0;
   int_fast64_t pos_b = 0;
+  // set direction pins of the steppermotor drivers:
   if(!ignore_direction){
     if(steps[0] < 0){
       digitalWrite(MOTOR_A_DIR_PIN, HIGH);
@@ -192,6 +191,7 @@ uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEE
       digitalWrite(MOTOR_B_DIR_PIN, LOW);    
     }
   }
+  // run the stepper motors:
   while (abs(pos_a) < abs(steps[0]) || abs(pos_b) < abs(steps[1])) {
     if(pos_a < steps[0]) {
       digitalWrite(MOTOR_A_STEP_PIN, HIGH);
@@ -224,9 +224,11 @@ uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEE
 }
 
 uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+  // has the same problem as move_steps() at the moment
   Serial.println(F("LOG:-------------------------------------------------------"));
   Serial.println(F("LOG:####### move_steps_diagonal_time starting... ########"));
   Serial.println(F("LOG:-------------------------------------------------------"));
+  // init positions:
   int pos_a = 0;
   int pos_b = 0;
   bool done_a = false;
@@ -255,6 +257,7 @@ uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_
   unsigned int interval_a;
   unsigned int interval_b;
   if (steps[0] == steps[1]){
+    // if the steps are equal, both intervals are the minimum interval
     Serial.println(F("DEBUG:Steps A == B"));
     interval_a = working_speed_delay;
     interval_b = working_speed_delay;
@@ -265,18 +268,19 @@ uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_
         Serial.println(F("DEBUG:A has more steps than b"));
         ratio = steps[0]/steps[1];
         interval_a = working_speed_delay;
-        interval_b = (int)(ratio*working_speed_delay);  // divide by two, to compensate raising edge every two iterations
+        interval_b = (int)(ratio*working_speed_delay);
       }
       else {
         Serial.println(F("DEBUG:B has more steps than A"));
         ratio = steps[1]/steps[0];
         interval_b = working_speed_delay;
-        interval_a = (int)(ratio*working_speed_delay);  // divide by two, to compensate raising edge every two iterations
+        interval_a = (int)(ratio*working_speed_delay);
       }
       Serial.print(F("DEBUG:Ratio: "));
       Serial.println(ratio);
     }
     else {
+      // only one motor has to move:
       if (!steps[0]){
         done_a = true;
         interval_b = working_speed_delay;
@@ -293,6 +297,7 @@ uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_
   Serial.println(interval_a);
   Serial.print(F("DEBUG:Interval B: "));
   Serial.println(interval_b);
+  // move the steps:
   while (!(done_a && done_b)) {
     current_micros = micros();
     if((current_micros - previous_micros_a >= HIGH_DELAY) && !done_a){
@@ -349,17 +354,19 @@ uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working
   else {
     digitalWrite(MOTOR_B_DIR_PIN, LOW);
   }
+  // use move_steps, if the angle to the x-axis is a multiple of pi/4:
   if(!(steps[0] && steps[1]) || abs(steps[0]) == abs(steps[1])){
-    // Serial.println(F("DEBUG:Using move_steps to move"));
-    // Serial.print(F("DEBUG:steps A are: "));
-    // Serial.println(steps[0]);
-    // Serial.print(F("DEBUG:steps B are: "));
-    // Serial.println(steps[1]);
     return move_steps(steps);
   }
+  /*
+    use the absolute of steps, to simplify calculations,
+    the sign is not needed anymore, because direction is
+    already set
+  */
   steps[0] = abs(steps[0]);
   steps[1] = abs(steps[1]);
   // calculate slope and long / short side:
+  // init variables:
   uint8_t short_side;
   uint8_t long_side;
   uint8_t step_pin_short_side;
@@ -367,12 +374,14 @@ uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working
   int_fast64_t steps_short_position = 0;
   int_fast64_t steps_long_position = 0;
   float slope;
+  // check, which side is bigger:
   if(steps[0] < steps[1]){
     Serial.println(F("DEBUG:Steps: A < B"));
     long_side = 1;
     short_side = 0;
     step_pin_short_side = MOTOR_A_STEP_PIN;
     step_pin_long_side = MOTOR_B_STEP_PIN;
+    // calculate slope:
     slope = (float) steps[short_side] / (float) steps[long_side];
   }
   else {
@@ -381,27 +390,22 @@ uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working
     short_side = 1;
     step_pin_short_side = MOTOR_B_STEP_PIN;
     step_pin_long_side = MOTOR_A_STEP_PIN;
-    // Serial.print(F("DEBUG:short side: "));
-    // Serial.println(short_side);
-    // Serial.print(F("DEBUG:steps short side: "));
-    // Serial.println(steps[short_side]);
-    // Serial.print(F("DEBUG:long side: "));
-    // Serial.println(long_side);
-    // Serial.print(F("DEBUG:steps long side: "));
-    // Serial.println(steps[long_side]);
+    // calculate slope:
     slope = (float) steps[short_side] / (float) steps[long_side];
   }
   Serial.print(F("DEBUG:Slope: "));
   Serial.println(slope);
   int_fast64_t diff;
+  // move the steps:
   for(Serial.println(F("DEBUG:started for loop")); steps_long_position <= steps[long_side]; steps_long_position++) {
-    digitalWrite(step_pin_long_side, HIGH);
+    digitalWrite(step_pin_long_side, HIGH);  // move the long side every iteration
+    // calculate the difference between perfect and actal position:
     diff = round(steps_long_position * slope - steps_short_position);
     if(diff >= 1){ // check difference between calculated and actual position
       digitalWrite(step_pin_short_side, HIGH);
       steps_short_position ++;
     }
-
+    // delay, so the drivers have time to receive the signal:
     delayMicroseconds(HIGH_DELAY);
     digitalWrite(step_pin_short_side, LOW);
     digitalWrite(step_pin_long_side, LOW);
@@ -421,6 +425,7 @@ uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working
 }
 
 uint8_t check_collision() {
+  // check for collisions and return the appropriate exit code
   if(!digitalRead(X_AXIS_END_SWITCH_0_PIN)){
     digitalWrite(MOTOR_A_STEP_PIN, LOW);
     digitalWrite(MOTOR_B_STEP_PIN, LOW);
@@ -502,8 +507,8 @@ void _homing_y(int speed_delay){
 }
 
 void homing() {
-  // make sure toolhead is up:
   Serial.println(F("LOG:Start Homing ..."));
+  // make sure toolhead is up:
   change_tool();
   // homing y two times, fast than slow:
   _homing_y(WORKING_SPEED_DELAY);
