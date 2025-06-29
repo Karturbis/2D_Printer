@@ -67,7 +67,7 @@
     #define HOMING_OFFSET_X 0
     #define HOMING_OFFSET_Y 0
     #define HOMING_MOVEBACK 500
-    #define HIGH_DELAY 10
+    #define HIGH_DELAY 2
     //debug:
     #define DISABLE_MOTORS false
 
