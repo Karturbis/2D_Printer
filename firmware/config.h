@@ -10,6 +10,7 @@
 // Connection with the PC:
 
 #define BAUD_RATE 115200
+
 //protocol Symbols:
 #define TERMINATOR ';'
 #define SEPERATOR ","
@@ -19,9 +20,6 @@
 #define DISENGAGE_TOOLHEAD "u"  
 #define ENGAGE_TOOLHEAD "d"
 #define CHANGE_TOOL "c"
-// goofy shit:
-#define NINECHARACTER "N"
-
 
 // Hardware Configuration:
 
@@ -63,7 +61,7 @@
     // for x axis: WORKING_SPEED_DELAY >= 134
     // for y axis: WORKING_SPEED_DELAY >= 155
     // use WORKING_SPEED_DELAY >= 170 for safety
-    #define WORKING_SPEED_DELAY 300
+    #define WORKING_SPEED_DELAY 600
     #define HOMING_SPEED_DELAY 1200
     // homing offsets in 10 000 micrometer
     #define HOMING_OFFSET_X 0
