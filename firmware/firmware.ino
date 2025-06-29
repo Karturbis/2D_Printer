@@ -9,9 +9,9 @@
 #include "config.h" // include configuration
 
 // Function prototypes:
-uint8_t move_steps(int steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
-uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
-uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
+uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay=WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false);
+uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
+uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false);
 
 // initialzize varables
 byte leds = 11100111;
@@ -84,7 +84,7 @@ void setup() {
   // Servo Setup:
     toolhead_servo.attach(SERVO_PIN);
     toolhead_servo.write(SERVO_TEST_POSITION);
-    delay(500);
+    delay(400);
     toolhead_servo.write((SERVO_UP_POSITION));
   
   // LEDs:
@@ -93,9 +93,8 @@ void setup() {
 
 void loop() {
   while (!Serial.available()) {}// wait for data available
-  String command = Serial.readStringUntil(TERMINATOR);  //read until terminator character
+  String command = Serial.readString();  //read until terminator character
   command.trim();
-  command.replace(NINECHARACTER, "9");
   Serial.print(F("LOG:Command: "));
   Serial.println(command);
   Serial.println(F("DEBUG: command was sent back"));
@@ -112,19 +111,19 @@ void loop() {
     Serial.println(y_distance);
     int exit_code = move(x_distance, y_distance); // go to
     if(exit_code == 1){
-      Serial.println(F("CRITICAL:Toolhead ran into wall, x-axis 0 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into x-negativ wall, x-axis 0 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
     }
     else if(exit_code == 2){
-      Serial.println(F("CRITICAL:Toolhead ran into wall, x-axis 1 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into x-positiv wall, x-axis 1 triggered!"));
       Serial.println("CRITICAL:Home the Printer to move again!");
     }
     else if(exit_code == 3){
-      Serial.println(F("CRITICAL:Toolhead ran into wall, y-axis 0 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into y-negativ wall, y-axis 0 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
     }
     else if(exit_code == 4){
-      Serial.println(F("CRITICAL:Toolhead ran into wall, y-axis 1 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into y-positiv wall, y-axis 1 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
     }
     Serial.println(exit_code);
@@ -147,26 +146,26 @@ void loop() {
   }
   else {
     Serial.println(F("WARNING:Unknown command"));
-    Serial.println(5);
+    Serial.println(0);
   }
 }
 
 uint8_t move(int x_distance, int y_distance) {
   Serial.println(F("DEBUG:Starting to move ..."));
-  int steps[2];
+  int_fast64_t steps[2];
   steps[0] = (-x_distance + y_distance)*STEP_TO_MICROMETER_RATIO;
   steps[1] = (-x_distance - y_distance)*STEP_TO_MICROMETER_RATIO;
   Serial.println(F("LOG:-----------------------------------"));
   Serial.println(F("LOG:######## Start moving #############"));
   Serial.println(F("LOG:-----------------------------------"));
-  Serial.print(F("DEBUG:Delta_X: "));
-  Serial.println(x_distance);
-  Serial.print(F("DEBUG:Delta_y: "));
-  Serial.println(y_distance);
-  Serial.print(F("DEBUG:Steps[0]: "));
-  Serial.println(steps[0]);
-  Serial.print(F("DEBUG:Steps[1]: "));
-  Serial.println(steps[1]);
+  // Serial.print(F("DEBUG:Delta_X: "));
+  // Serial.println(x_distance);
+  // Serial.print(F("DEBUG:Delta_y: "));
+  // Serial.println(y_distance);
+  // Serial.print(F("DEBUG:Steps[0]: "));
+  // Serial.println(steps[0]);
+  // Serial.print(F("DEBUG:Steps[1]: "));
+  // Serial.println(steps[1]);
   // move:
   uint8_t exit_code;
   exit_code = STEPS_ALGORITHM(steps);
@@ -175,9 +174,9 @@ uint8_t move(int x_distance, int y_distance) {
   return exit_code;
 }
 
-uint8_t move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
-  int pos_a = 0;
-  int pos_b = 0;
+uint8_t move_steps(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false, bool ignore_direction=false){
+  int_fast64_t pos_a = 0;
+  int_fast64_t pos_b = 0;
   if(!ignore_direction){
     if(steps[0] < 0){
       digitalWrite(MOTOR_A_DIR_PIN, HIGH);
@@ -223,7 +222,7 @@ uint8_t move_steps(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, 
 
 }
 
-uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+uint8_t move_steps_linear_interpolation_time(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println(F("LOG:-------------------------------------------------------"));
   Serial.println(F("LOG:####### move_steps_diagonal_time starting... ########"));
   Serial.println(F("LOG:-------------------------------------------------------"));
@@ -331,7 +330,7 @@ uint8_t move_steps_linear_interpolation_time(int steps[2], int working_speed_del
   return 0;
 }
 
-uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
+uint8_t move_steps_linear_interpolation_slope(int_fast64_t steps[2], int working_speed_delay = WORKING_SPEED_DELAY, bool ignore_endswitches=false){
   Serial.println(F("LOG:-------------------------------------------------------"));
   Serial.println(F("LOG:######## move_steps_diagonal_slope starting... ########"));
   Serial.println(F("LOG:-------------------------------------------------------"));
@@ -350,11 +349,11 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
     digitalWrite(MOTOR_B_DIR_PIN, LOW);
   }
   if(!(steps[0] && steps[1]) || abs(steps[0]) == abs(steps[1])){
-    Serial.println(F("DEBUG:Using move_steps to move"));
-    Serial.print(F("DEBUG:steps A are: "));
-    Serial.println(steps[0]);
-    Serial.print(F("DEBUG:steps B are: "));
-    Serial.println(steps[1]);
+    // Serial.println(F("DEBUG:Using move_steps to move"));
+    // Serial.print(F("DEBUG:steps A are: "));
+    // Serial.println(steps[0]);
+    // Serial.print(F("DEBUG:steps B are: "));
+    // Serial.println(steps[1]);
     return move_steps(steps);
   }
   steps[0] = abs(steps[0]);
@@ -364,8 +363,8 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
   uint8_t long_side;
   uint8_t step_pin_short_side;
   uint8_t step_pin_long_side;
-  long steps_short_position = 0;
-  long steps_long_position = 0;
+  int_fast64_t steps_short_position = 0;
+  int_fast64_t steps_long_position = 0;
   float slope;
   if(steps[0] < steps[1]){
     Serial.println(F("DEBUG:Steps: A < B"));
@@ -381,19 +380,19 @@ uint8_t move_steps_linear_interpolation_slope(int steps[2], int working_speed_de
     short_side = 1;
     step_pin_short_side = MOTOR_B_STEP_PIN;
     step_pin_long_side = MOTOR_A_STEP_PIN;
-    Serial.print(F("DEBUG:short side: "));
-    Serial.println(short_side);
-    Serial.print(F("DEBUG:steps short side: "));
-    Serial.println(steps[short_side]);
-    Serial.print(F("DEBUG:long side: "));
-    Serial.println(long_side);
-    Serial.print(F("DEBUG:steps long side: "));
-    Serial.println(steps[long_side]);
+    // Serial.print(F("DEBUG:short side: "));
+    // Serial.println(short_side);
+    // Serial.print(F("DEBUG:steps short side: "));
+    // Serial.println(steps[short_side]);
+    // Serial.print(F("DEBUG:long side: "));
+    // Serial.println(long_side);
+    // Serial.print(F("DEBUG:steps long side: "));
+    // Serial.println(steps[long_side]);
     slope = (float) steps[short_side] / (float) steps[long_side];
   }
   Serial.print(F("DEBUG:Slope: "));
   Serial.println(slope);
-  long diff;
+  int_fast64_t diff;
   for(Serial.println(F("DEBUG:started for loop")); steps_long_position <= steps[long_side]; steps_long_position++) {
     digitalWrite(step_pin_long_side, HIGH);
     diff = round(steps_long_position * slope - steps_short_position);
@@ -454,7 +453,7 @@ uint8_t check_collision() {
 }
 
 void _homing_x(int speed_delay) {
-  int steps[2];
+  int_fast64_t steps[2];
   // drive to x-axis stop using move:
   Serial.println(F("LOG:Homing X-Axis ..."));
   bool stop = !digitalRead(X_AXIS_END_SWITCH_0_PIN);
@@ -478,7 +477,7 @@ void _homing_x(int speed_delay) {
 }
 
 void _homing_y(int speed_delay){
-  int steps[2];
+  int_fast64_t steps[2];
   // drive to y-axis stop using move
   Serial.println(F("LOG:Homing Y-Axis ..."));
   bool stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
