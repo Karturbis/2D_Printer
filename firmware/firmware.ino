@@ -80,6 +80,7 @@ void setup() {
   // connection with computer:
     Serial.begin(BAUD_RATE);
     Serial.setTimeout(100);
+    Serial.flush(); // make sure the output buffer is empty
 
   // Servo Setup:
     toolhead_servo.attach(SERVO_PIN);
@@ -146,7 +147,7 @@ void loop() {
   }
   else {
     Serial.println(F("WARNING:Unknown command"));
-    Serial.println(0);
+    Serial.println(5);
   }
 }
 
