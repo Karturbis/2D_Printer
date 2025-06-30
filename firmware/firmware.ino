@@ -125,11 +125,11 @@ void loop() {
       Serial.println("CRITICAL:Home the Printer to move again!");
     }
     else if(exit_code == 3){
-      Serial.println(F("CRITICAL:Toolhead ran into y-negativ wall, y-axis 0 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into y-positve wall, y-axis 0 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
     }
     else if(exit_code == 4){
-      Serial.println(F("CRITICAL:Toolhead ran into y-positiv wall, y-axis 1 triggered!"));
+      Serial.println(F("CRITICAL:Toolhead ran into y-negative wall, y-axis 1 triggered!"));
       Serial.println(F("CRITICAL:Home the Printer to move again!"));
     }
     Serial.println(exit_code);
@@ -159,8 +159,8 @@ void loop() {
 uint8_t move(int x_distance, int y_distance) {
   Serial.println(F("DEBUG:Starting to move ..."));
   int_fast64_t steps[2];
-  steps[0] = (-x_distance + y_distance)*STEP_TO_MICROMETER_RATIO;
-  steps[1] = (-x_distance - y_distance)*STEP_TO_MICROMETER_RATIO;
+  steps[0] = (-x_distance - y_distance)*STEP_TO_MICROMETER_RATIO;
+  steps[1] = (-x_distance + y_distance)*STEP_TO_MICROMETER_RATIO;
   Serial.println(F("LOG:-----------------------------------"));
   Serial.println(F("LOG:######## Start moving #############"));
   Serial.println(F("LOG:-----------------------------------"));
@@ -486,20 +486,20 @@ void _homing_y(int speed_delay){
   int_fast64_t steps[2];
   // drive to y-axis stop using move
   Serial.println(F("LOG:Homing Y-Axis ..."));
-  bool stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
-  steps[0] = -1;
-  steps[1] = 1;
+  bool stop = !digitalRead(Y_AXIS_END_SWITCH_1_PIN);
+  steps[0] = 1;
+  steps[1] = -1;
   while(!stop) {
     move_steps(steps, speed_delay, true);
-    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_1_PIN);
   }
   Serial.println(F("LOG:Hit the trigger, moving back"));
   // driving until the switch is not triggered anymore:
-  steps[0] = 1;
-  steps[1] = -1;
+  steps[0] = -1;
+  steps[1] = 1;
   while (stop) {
     move_steps(steps, speed_delay, true);
-    stop = !digitalRead(Y_AXIS_END_SWITCH_0_PIN);
+    stop = !digitalRead(Y_AXIS_END_SWITCH_1_PIN);
   }
   Serial.println(F("LOG:Finished Homing Y-Axis"));
   Serial.println(F("LOG:Backing up on Y-Axis ..."));
